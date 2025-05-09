@@ -28,12 +28,32 @@
       font-family: monospace;
       cursor: pointer;
     }
+    #score {
+      transition: transform 0.2s ease-out;
+    }
+    #score.increase {
+      transform: scale(1.2);
+    }
+    .touch-btn:active {
+      background: rgba(0, 255, 204, 0.4);
+      transform: scale(0.95);
+    }
+    #game-over {
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+    #game-over.visible {
+      opacity: 1;
+    }
   </style>
 </head>
 <body>
   <div id="overlay">Score: <span id="score">0</span></div>
   <button id="toggle-btn" onclick="toggleControls()">Toggle Controls</button>
   <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/EffectComposer.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/RenderPass.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
   <script>
     function toggleControls() {
       const el = document.getElementById('touch-controls');
