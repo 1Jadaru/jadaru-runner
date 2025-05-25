@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Force Control Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #333;
+      color: white;
+      padding: 20px;
+    }
+    
+    .test-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: rgba(0,0,0,0.8);
+      padding: 20px;
+      border-radius: 10px;
+    }
+    
+    .force-control-panel {
+      background: rgba(0,0,0,0.8);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 2px solid #4CAF50;
+    }
+    
+    .control-row {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+    }
+    
+    .control-label {
+      min-width: 120px;
+      font-weight: bold;
+    }
+    
+    #forceSlider {
+      flex: 1;
+      margin: 0 10px;
+      accent-color: #4CAF50;
+    }
+    
+    .force-button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 5px;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+      margin: 0 5px;
+    }
+    
+    #forceIncrease { background: #44ff44; }
+    #forceDecrease { background: #ff4444; }
+    
+    .force-button:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 10px rgba(255,255,255,0.3);
+    }
+    
+    #forceValue {
+      color: #4CAF50;
+      font-weight: bold;
+      font-size: 18px;
+      min-width: 60px;
+      text-align: center;
+    }
+    
+    .info-panel {
+      background: rgba(0,0,0,0.6);
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    
+    .force-display {
+      font-size: 16px;
+      margin: 10px 0;
+      padding: 10px;
+      background: rgba(76, 175, 80, 0.1);
+      border-left: 4px solid #4CAF50;
+    }
+  </style>
+</head>
+<body>
+  <div class="test-container">
+    <h1>Force Control System Test</h1>
+    
+    <div class="force-control-panel">
+      <h3>Movement Force Controls</h3>
+      
+      <div class="control-row">
+        <span class="control-label">Force Level:</span>
+        <button id="forceDecrease" class="force-button">-</button>
+        <input type="range" id="forceSlider" min="0.5" max="8" value="2" step="0.1">
+        <button id="forceIncrease" class="force-button">+</button>
+        <span id="forceValue">2.0</span>
+      </div>
+      
+      <div class="control-row">
+        <span class="control-label">Shortcuts:</span>
+        <span>Press [ to decrease, ] to increase force</span>
+      </div>
+    </div>
+    
+    <div class="info-panel">
+      <h3>Test Information</h3>
+      <div class="force-display" id="currentForce">Current Force: 2.0</div>
+      <div id="testLog" style="background: #000; padding: 10px; border-radius: 5px; font-family: monospace; max-height: 200px; overflow-y: auto;">
+        <div>Force control test initialized...</div>
+      </div>
+    </div>
+    
+    <div class="info-panel">
+      <h3>Instructions</h3>
+      <ul>
+        <li>Move the slider to adjust force level (0.5 - 8.0)</li>
+        <li>Click + or - buttons for quick adjustments</li>
+        <li>Use [ and ] keys for keyboard shortcuts</li>
+        <li>Watch the console for debug information</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    console.log('Force Control Test Page Loaded');
+    
+    // Mock game object for testing
+    window.game = {
+      playerController: {
+        forceMagnitude: 2.0,
+        setForceMagnitude: function(force) {
+          console.log('Mock: Setting force magnitude to:', force);
+          this.forceMagnitude = force;
+          logToDisplay(`Force magnitude set to: ${force}`);
+          updateCurrentForceDisplay(force);
+        }
+      }
+    };
+    
+    function logToDisplay(message) {
+      const testLog = document.getElementById('testLog');
+      const logEntry = document.createElement('div');
+      logEntry.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      testLog.appendChild(logEntry);
+      testLog.scrollTop = testLog.scrollHeight;
+    }
+    
+    function updateCurrentForceDisplay(force) {
+      const currentForceDisplay = document.getElementById('currentForce');
+      currentForceDisplay.textContent = `Current Force: ${force.toFixed(1)}`;
+    }
+    
+    // Force control implementation (copied from main game)
+    function setupForceControls() {
+      console.log('Setting up force controls...');
+      const forceSlider = document.getElementById('forceSlider');
+      const forceValue = document.getElementById('forceValue');
+      const forceIncrease = document.getElementById('forceIncrease');
+      const forceDecrease = document.getElementById('forceDecrease');
+      
+      console.log('Force control elements found:', {
+        forceSlider: !!forceSlider,
+        forceValue: !!forceValue,
+        forceIncrease: !!forceIncrease,
+        forceDecrease: !!forceDecrease
+      });
+      
+      logToDisplay('Force control elements initialized');
+      
+      // Update force value display
+      const updateForceDisplay = (value, showFeedback = false) => {
+        if (forceValue) {
+          forceValue.textContent = parseFloat(value).toFixed(1);
+          
+          // Add visual feedback
+          if (showFeedback) {
+            forceValue.style.transform = 'scale(1.2)';
+            forceValue.style.color = '#FFF';
+            setTimeout(() => {
+              forceValue.style.transform = 'scale(1)';
+              forceValue.style.color = '#4CAF50';
+            }, 200);
+          }
+        }
+      };
+
+      // Slider event listener
+      if (forceSlider) {
+        forceSlider.addEventListener('input', (e) => {
+          const newForce = parseFloat(e.target.value);
+          console.log('Force slider changed to:', newForce);
+          logToDisplay(`Slider changed to: ${newForce}`);
+          updateForceDisplay(newForce);
+          
+          // Update player controller force
+          if (window.game && window.game.playerController) {
+            window.game.playerController.setForceMagnitude(newForce);
+          }
+        });
+
+        // Initialize display
+        updateForceDisplay(forceSlider.value);
+        console.log('Force slider initialized with value:', forceSlider.value);
+        logToDisplay(`Force slider initialized with value: ${forceSlider.value}`);
+      } else {
+        console.warn('Force slider element not found!');
+        logToDisplay('ERROR: Force slider element not found!');
+      }
+
+      // Increase force button
+      if (forceIncrease) {
+        forceIncrease.addEventListener('click', () => {
+          if (forceSlider) {
+            const currentValue = parseFloat(forceSlider.value);
+            const newValue = Math.min(parseFloat(forceSlider.max), currentValue + 0.2);
+            forceSlider.value = newValue;
+            updateForceDisplay(newValue, true);
+            logToDisplay(`Force increased to: ${newValue}`);
+            
+            if (window.game && window.game.playerController) {
+              window.game.playerController.setForceMagnitude(newValue);
+            }
+          }
+        });
+        logToDisplay('Force increase button connected');
+      }
+
+      // Decrease force button
+      if (forceDecrease) {
+        forceDecrease.addEventListener('click', () => {
+          if (forceSlider) {
+            const currentValue = parseFloat(forceSlider.value);
+            const newValue = Math.max(parseFloat(forceSlider.min), currentValue - 0.2);
+            forceSlider.value = newValue;
+            updateForceDisplay(newValue, true);
+            logToDisplay(`Force decreased to: ${newValue}`);
+            
+            if (window.game && window.game.playerController) {
+              window.game.playerController.setForceMagnitude(newValue);
+            }
+          }
+        });
+        logToDisplay('Force decrease button connected');
+      }
+
+      // Keyboard shortcuts for force adjustment
+      window.addEventListener('keydown', (e) => {
+        if (e.target.tagName.toLowerCase() === 'input') return; // Don't interfere with input fields
+        
+        if (e.key === '[' || e.key === '{') { // Decrease force
+          e.preventDefault();
+          if (forceSlider) {
+            const currentValue = parseFloat(forceSlider.value);
+            const newValue = Math.max(parseFloat(forceSlider.min), currentValue - 0.1);
+            forceSlider.value = newValue;
+            updateForceDisplay(newValue, true);
+            logToDisplay(`Keyboard decrease: ${newValue}`);
+            
+            if (window.game && window.game.playerController) {
+              window.game.playerController.setForceMagnitude(newValue);
+            }
+          }
+        } else if (e.key === ']' || e.key === '}') { // Increase force
+          e.preventDefault();
+          if (forceSlider) {
+            const currentValue = parseFloat(forceSlider.value);
+            const newValue = Math.min(parseFloat(forceSlider.max), currentValue + 0.1);
+            forceSlider.value = newValue;
+            updateForceDisplay(newValue, true);
+            logToDisplay(`Keyboard increase: ${newValue}`);
+            
+            if (window.game && window.game.playerController) {
+              window.game.playerController.setForceMagnitude(newValue);
+            }
+          }
+        }
+      });
+      
+      logToDisplay('Keyboard shortcuts configured ([ and ] keys)');
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      logToDisplay('DOM loaded, initializing force controls...');
+      setupForceControls();
+      logToDisplay('Force control test ready!');
+    });
+  </script>
+</body>
+</html>

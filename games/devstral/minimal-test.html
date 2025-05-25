@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Babylon.js Test - Minimal</title>
+  <style>
+    #renderCanvas { 
+      width: 100vw; 
+      height: 100vh; 
+      display: block; 
+    }
+    #loadingScreen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #333;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+    #loadingScreen.hidden { display: none; }
+    .loading-progress { width: 50%; height: 4px; background: #4CAF50; }
+  </style>
+</head>
+<body>
+  <div id="loadingScreen">
+    <div>
+      <div>Loading Game...</div>
+      <div class="loading-progress" id="loadingProgress"></div>
+    </div>
+  </div>
+  <!-- Minimal UI elements -->
+  <div id="scoreLabel" style="position: fixed; top: 10px; left: 10px; color: white; z-index: 100;">Score: 0</div>
+  <div id="forceLabel" style="position: fixed; top: 30px; left: 10px; color: white; z-index: 100;">Force: (0, 0, 0)</div>
+  <div id="gameStats" style="position: fixed; top: 50px; left: 10px; color: white; z-index: 100;">Time: 0s | FPS: 60 | Level: 1</div>
+  <div id="instructions" style="position: fixed; top: 70px; left: 10px; color: white; z-index: 100;">Arrow keys: Move | Space: Jump | [ ] : Adjust Force</div>
+  
+  <!-- Force Control Panel -->
+  <div id="forceControl" style="position: fixed; top: 10px; right: 200px; background: rgba(0,0,0,0.8); color: white; padding: 15px; border-radius: 8px; z-index: 100; min-width: 180px;">
+    <div style="font-weight: bold; margin-bottom: 10px;">Movement Force</div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <button id="forceDecrease" style="background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-right: 8px;">-</button>
+      <input type="range" id="forceSlider" min="0.5" max="8" value="2" step="0.1" style="flex: 1; margin: 0 8px;">
+      <button id="forceIncrease" style="background: #44ff44; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 8px;">+</button>
+    </div>
+    <div style="text-align: center; font-size: 14px;">
+      <span id="forceValue">2.0</span> / 8.0
+    </div>
+    <div style="font-size: 12px; color: #ccc; margin-top: 5px;">
+      Shortcuts: [ ] to adjust
+    </div>
+  </div>
+    <button id="resetBtn" style="position: fixed; top: 10px; right: 10px; z-index: 100;">Reset</button>
+  <button id="soundToggle" style="position: fixed; top: 40px; right: 10px; z-index: 100;">🔊</button>
+  <button id="settingsBtn" style="position: fixed; top: 70px; right: 10px; z-index: 100;">⚙️</button>
+  <button id="statsBtn" style="position: fixed; top: 100px; right: 10px; z-index: 100;">📊</button>
+  <button id="pauseBtn" style="position: fixed; top: 130px; right: 10px; z-index: 100;">⏸️</button>
+
+  <!-- Hidden elements -->
+  <div id="levelNotification" style="display: none;"></div>
+  <div id="statsPanel" style="display: none;"></div>  <div id="settingsMenu" style="display: none;">
+    <select id="qualitySelect"><option value="medium" selected>Medium</option></select>
+  </div>
+  
+  <div style="display: none;">
+    <button id="mobileLeft">←</button>
+    <button id="mobileUp">↑</button>
+    <button id="mobileJump">⬆</button>
+    <button id="mobileDown">↓</button>
+    <button id="mobileRight">→</button>
+  </div>
+
+  <canvas id="renderCanvas"></canvas>
+
+  <script>
+    console.log('Loading scripts...');
+    
+    // Load Babylon.js
+    const script1 = document.createElement('script');
+    script1.src = 'https://cdn.babylonjs.com/babylon.js';
+    script1.onload = () => {
+      console.log('Babylon.js loaded');
+      
+      // Load Cannon.js
+      const script2 = document.createElement('script');
+      script2.src = 'https://cdn.babylonjs.com/cannon.js';
+      script2.onload = () => {
+        console.log('Cannon.js loaded');
+        
+        // Load game script
+        const script3 = document.createElement('script');
+        script3.src = 'babylon-game-improved.js';
+        script3.onload = () => {
+          console.log('Game script loaded successfully');
+        };
+        script3.onerror = (e) => {
+          console.error('Failed to load game script:', e);
+          document.getElementById('loadingScreen').innerHTML = '<div style="color: red;">Failed to load game script</div>';
+        };
+        document.head.appendChild(script3);
+      };
+      script2.onerror = (e) => {
+        console.error('Failed to load Cannon.js:', e);
+      };
+      document.head.appendChild(script2);
+    };
+    script1.onerror = (e) => {
+      console.error('Failed to load Babylon.js:', e);
+    };
+    document.head.appendChild(script1);
+  </script>
+</body>
+</html>

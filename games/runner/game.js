@@ -27,6 +27,26 @@ const keys = {
   up: false
 };
 
+// Add frame rate monitoring and adjustment
+const fpsMonitor = {
+    frames: 0,
+    lastTime: performance.now(),
+    
+    update() {
+        this.frames++;
+        const now = performance.now();
+        if (now - this.lastTime > 1000) {
+            const fps = this.frames * 1000 / (now - this.lastTime);
+            if (fps < 30) {
+                // Reduce visual effects
+                reduceVisualEffects();
+            }
+            this.frames = 0;
+            this.lastTime = now;
+        }
+    }
+};
+
 function init() {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
@@ -715,5 +735,18 @@ function createEnvironment() {
     scene.add(treeGroup);
   }
 }
+
+// Add asset preloading
+const preloadAssets = async () => {
+    const loadingManager = new THREE.LoadingManager();
+    const textureLoader = new THREE.TextureLoader(loadingManager);
+    
+    return new Promise((resolve, reject) => {
+        loadingManager.onLoad = resolve;
+        loadingManager.onError = reject;
+        
+        // Preload textures/assets here
+    });
+};
 
 init();

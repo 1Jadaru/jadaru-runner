@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Babylon.js Physics Player Control</title>
+  <style>
+    html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+    #renderCanvas { width: 100vw; height: 100vh; display: block; }
+  </style>
+</head>
+<body>
+<div id="forceLabel" style="
+  position:absolute;
+  top:10px; right:10px;
+  color:#fff;
+  font-family:monospace;
+  font-size:18px;
+  z-index:10;
+  background:rgba(0,0,0,0.6);
+  padding:4px 12px;
+  border-radius:8px;
+  user-select:none;
+">
+  Force: (0, 0, 0)
+</div>
+
+<button id="resetBtn" style="
+  position:absolute;
+  top:50px; right:10px;
+  z-index:11;
+  font-size:16px;
+  padding:6px 16px;
+  border-radius:8px;
+  border:none;
+  background:#2196f3;
+  color:#fff;
+  cursor:pointer;
+">Reset</button>
+
+  <canvas id="renderCanvas"></canvas>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/cannon.js"></script>
+  <script>
+    const canvas = document.getElementById("renderCanvas");
+    const engine = new BABYLON.Engine(canvas, true);
+    const scene = new BABYLON.Scene(engine);
+
+    // Enable physics
+    scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
+
+    // Camera
+    const camera = new BABYLON.ArcRotateCamera("camera", Math.PI/2, Math.PI/3, 12, BABYLON.Vector3.Zero(), scene);
+    camera.attachControl(canvas, true);
+
+    // Disable arrow key controls for the camera
+    camera.inputs.attached.keyboard.keysUp = [];
+camera.inputs.attached.keyboard.keysDown = [];
+camera.inputs.attached.keyboard.keysLeft = [];
+camera.inputs.attached.keyboard.keysRight = [];
+
+    // Lighting
+    const hemiLight = new BABYLON.HemisphericLight("hemiLight", new BABYLON.Vector3(0, 1, 0), scene);
+hemiLight.intensity = 0.7;
+
+// Add a directional light for shadows
+const dirLight = new BABYLON.DirectionalLight("dirLight", new BABYLON.Vector3(-1, -2, -1), scene);
+dirLight.position = new BABYLON.Vector3(10, 20, 10);
+dirLight.intensity = 1.0;
+
+    // Ground (with physics)
+    const ground = BABYLON.MeshBuilder.CreateGround("ground", { width: 20, height: 20 }, scene);
+    ground.position.y = 0;
+    const groundMat = new BABYLON.StandardMaterial("gmat", scene);
+    groundMat.diffuseColor = new BABYLON.Color3(0.19, 0.22, 0.24);
+    ground.material = groundMat;
+    ground.physicsImpostor = new BABYLON.PhysicsImpostor(
+      ground, BABYLON.PhysicsImpostor.BoxImpostor, 
+      { mass: 0, restitution: 0.7, friction: 0.7 }, scene
+    );
+
+    // Player cube (can easily be a sphere if you want!)
+    const player = BABYLON.MeshBuilder.CreateBox("player", { size: 1 }, scene);
+    player.position.y = 1;
+    const playerMat = new BABYLON.StandardMaterial("pmat", scene);
+    playerMat.diffuseColor = new BABYLON.Color3(0.2, 0.7, 1.0);
+    player.material = playerMat;
+
+    player.physicsImpostor = new BABYLON.PhysicsImpostor(
+      player, BABYLON.PhysicsImpostor.BoxImpostor,
+      { mass: 2, restitution: 0.3, friction: 0.9 }, scene
+    );
+
+    // Add textures to ground and player
+const groundTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/grass.jpg", scene);
+groundMat.diffuseTexture = groundTexture;
+
+const playerTexture = new BABYLON.Texture("https://assets.babylonjs.com/environments/wood.jpg", scene);
+playerMat.diffuseTexture = playerTexture;
+
+// Add a skybox
+const skybox = BABYLON.MeshBuilder.CreateBox("skyBox", {size:100}, scene);
+const skyboxMaterial = new BABYLON.StandardMaterial("skyBox", scene);
+skyboxMaterial.backFaceCulling = false;
+skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://playground.babylonjs.com/textures/skybox", scene);
+skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+skyboxMaterial.diffuseColor = new BABYLON.Color3(0, 0, 0);
+skyboxMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
+skybox.material = skyboxMaterial;
+
+// Add shadow generator
+const shadowGenerator = new BABYLON.ShadowGenerator(1024, dirLight);
+shadowGenerator.addShadowCaster(player);
+ground.receiveShadows = true;
+
+// Particle system for player movement
+const particleSystem = new BABYLON.ParticleSystem("particles", 2000, scene);
+particleSystem.particleTexture = new BABYLON.Texture("https://playground.babylonjs.com/textures/flare.png", scene);
+particleSystem.emitter = player;
+particleSystem.minEmitBox = new BABYLON.Vector3(-0.2, 0, -0.2);
+particleSystem.maxEmitBox = new BABYLON.Vector3(0.2, 0, 0.2);
+particleSystem.color1 = new BABYLON.Color4(1, 1, 0, 1);
+particleSystem.color2 = new BABYLON.Color4(1, 0.5, 0, 1);
+particleSystem.minSize = 0.1;
+particleSystem.maxSize = 0.3;
+particleSystem.minLifeTime = 0.1;
+particleSystem.maxLifeTime = 0.3;
+particleSystem.emitRate = 0;
+particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+particleSystem.direction1 = new BABYLON.Vector3(-1, -1, -1);
+particleSystem.direction2 = new BABYLON.Vector3(1, -1, 1);
+particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+particleSystem.start();
+
+    // Movement variables
+    const forceMagnitude = 2; // Change for more/less responsive
+    const movement = { left: false, right: false, up: false, down: false };
+
+    // Keyboard handling
+    window.addEventListener('keydown', (e) => {
+      switch(e.key) {
+        case 'ArrowLeft': movement.left = true; e.preventDefault(); break;
+        case 'ArrowRight': movement.right = true; e.preventDefault(); break;
+        case 'ArrowUp': movement.up = true; e.preventDefault(); break;
+        case 'ArrowDown': movement.down = true; e.preventDefault(); break;
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      switch(e.key) {
+        case 'ArrowLeft': movement.left = false; e.preventDefault(); break;
+        case 'ArrowRight': movement.right = false; e.preventDefault(); break;
+        case 'ArrowUp': movement.up = false; e.preventDefault(); break;
+        case 'ArrowDown': movement.down = false; e.preventDefault(); break;
+      }
+    });
+
+// Prevent arrow keys from scrolling the page globally
+window.addEventListener('keydown', function(e) {
+  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(e.key)) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+    // Reset button functionality
+document.getElementById("resetBtn").addEventListener("click", () => {
+  // Reset position
+  player.position = new BABYLON.Vector3(0, 1, 0);
+  // Reset velocity and angular velocity
+  if (player.physicsImpostor) {
+    player.physicsImpostor.setLinearVelocity(BABYLON.Vector3.Zero());
+    player.physicsImpostor.setAngularVelocity(BABYLON.Vector3.Zero());
+  }
+});
+
+    // Add collectibles (coins)
+const coinMat = new BABYLON.StandardMaterial("coinMat", scene);
+coinMat.diffuseColor = new BABYLON.Color3(1, 0.85, 0.2);
+let coins = [];
+function spawnCoin() {
+  const x = Math.random() * 16 - 8;
+  const z = Math.random() * 16 - 8;
+  const coin = BABYLON.MeshBuilder.CreateCylinder("coin", {diameter:0.5, height:0.1}, scene);
+  coin.position = new BABYLON.Vector3(x, 0.55, z);
+  coin.material = coinMat;
+  coin.rotation.x = Math.PI/2;
+  coins.push(coin);
+}
+for (let i = 0; i < 5; i++) spawnCoin();
+
+// Score system
+let score = 0;
+const scoreLabel = document.createElement('div');
+scoreLabel.id = 'scoreLabel';
+scoreLabel.style.position = 'absolute';
+scoreLabel.style.top = '10px';
+scoreLabel.style.left = '10px';
+scoreLabel.style.color = '#fff';
+scoreLabel.style.fontFamily = 'monospace';
+scoreLabel.style.fontSize = '20px';
+scoreLabel.style.zIndex = '12';
+scoreLabel.style.background = 'rgba(0,0,0,0.6)';
+scoreLabel.style.padding = '4px 12px';
+scoreLabel.style.borderRadius = '8px';
+scoreLabel.style.userSelect = 'none';
+scoreLabel.innerText = 'Score: 0';
+document.body.appendChild(scoreLabel);
+
+// Instructions
+const instructions = document.createElement('div');
+instructions.id = 'instructions';
+instructions.style.position = 'absolute';
+instructions.style.bottom = '10px';
+instructions.style.left = '50%';
+instructions.style.transform = 'translateX(-50%)';
+instructions.style.color = '#fff';
+instructions.style.fontFamily = 'monospace';
+instructions.style.fontSize = '16px';
+instructions.style.zIndex = '12';
+instructions.style.background = 'rgba(0,0,0,0.6)';
+instructions.style.padding = '4px 12px';
+instructions.style.borderRadius = '8px';
+instructions.style.userSelect = 'none';
+instructions.innerText = 'Use arrow keys to move. Collect all coins!';
+document.body.appendChild(instructions);
+
+// Add a simple obstacle
+const obstacle = BABYLON.MeshBuilder.CreateBox("obstacle", {size:1.5}, scene);
+obstacle.position = new BABYLON.Vector3(3, 0.75, 3);
+const obstacleMat = new BABYLON.StandardMaterial("obstacleMat", scene);
+obstacleMat.diffuseColor = new BABYLON.Color3(1, 0.2, 0.2);
+obstacle.material = obstacleMat;
+obstacle.physicsImpostor = new BABYLON.PhysicsImpostor(
+  obstacle, BABYLON.PhysicsImpostor.BoxImpostor,
+  { mass: 0, restitution: 0.5, friction: 0.8 }, scene
+);
+
+    // Main render loop
+    engine.runRenderLoop(() => {
+      // Apply physics force for movement
+const forceLabel = document.getElementById("forceLabel");
+if (player.physicsImpostor) {
+  let force = new BABYLON.Vector3(0, 0, 0);
+  if (movement.left)  force.x += forceMagnitude;
+  if (movement.right) force.x -= forceMagnitude;
+  if (movement.up)    force.z -= forceMagnitude;   // This line is now negative!
+  if (movement.down)  force.z += forceMagnitude;   // This line is now positive!
+  if (!force.equals(BABYLON.Vector3.Zero())) {
+    player.physicsImpostor.applyImpulse(force, player.getAbsolutePosition());
+  }
+  forceLabel.innerText = `Force: (${force.x.toFixed(2)}, ${force.y.toFixed(2)}, ${force.z.toFixed(2)})`;
+}
+
+// Particle emission when moving
+particleSystem.emitRate = (movement.left || movement.right || movement.up || movement.down) ? 100 : 0;
+
+// Coin collection
+for (let i = coins.length - 1; i >= 0; i--) {
+  if (player.intersectsMesh(coins[i], false)) {
+    coins[i].dispose();
+    coins.splice(i, 1);
+    score++;
+    scoreLabel.innerText = `Score: ${score}`;
+    // Play sound effect
+    if (window.Audio) {
+      const audio = new Audio('https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b7bfa.mp3');
+      audio.volume = 0.3;
+      audio.play();
+    }
+    // Spawn a new coin
+    spawnCoin();
+  }
+}
+      scene.render();
+    });
+
+    window.addEventListener("resize", () => engine.resize());
+  </script>
+</body>
+</html>

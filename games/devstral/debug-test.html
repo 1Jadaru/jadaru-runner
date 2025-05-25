@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Test - Babylon.js Game</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    .error { color: red; font-weight: bold; }
+    .success { color: green; font-weight: bold; }
+    .warning { color: orange; font-weight: bold; }
+    #console { 
+      background: #f0f0f0; 
+      padding: 10px; 
+      margin: 10px 0; 
+      border-radius: 5px;
+      height: 300px;
+      overflow-y: auto;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>Babylon.js Game Debug Test</h1>
+  <div id="console"></div>
+  
+  <script>
+    // Override console methods to capture output
+    const consoleDiv = document.getElementById('console');
+    const originalLog = console.log;
+    const originalError = console.error;
+    const originalWarn = console.warn;
+    
+    function addToConsole(message, type = 'log') {
+      const timestamp = new Date().toLocaleTimeString();
+      const className = type === 'error' ? 'error' : type === 'warn' ? 'warning' : 'success';
+      consoleDiv.innerHTML += `<div class="${className}">[${timestamp}] ${type.toUpperCase()}: ${message}</div>`;
+      consoleDiv.scrollTop = consoleDiv.scrollHeight;
+    }
+    
+    console.log = function(...args) {
+      originalLog.apply(console, args);
+      addToConsole(args.join(' '), 'log');
+    };
+    
+    console.error = function(...args) {
+      originalError.apply(console, args);
+      addToConsole(args.join(' '), 'error');
+    };
+    
+    console.warn = function(...args) {
+      originalWarn.apply(console, args);
+      addToConsole(args.join(' '), 'warn');
+    };
+    
+    // Test script loading
+    console.log('Starting debug test...');
+    
+    // Test Babylon.js loading
+    const babylonScript = document.createElement('script');
+    babylonScript.src = 'https://cdn.babylonjs.com/babylon.js';
+    babylonScript.onload = () => {
+      console.log('✓ Babylon.js loaded successfully');
+      
+      // Test Cannon.js loading
+      const cannonScript = document.createElement('script');
+      cannonScript.src = 'https://cdn.babylonjs.com/cannon.js';
+      cannonScript.onload = () => {
+        console.log('✓ Cannon.js loaded successfully');
+        
+        // Test game script loading
+        const gameScript = document.createElement('script');
+        gameScript.src = 'babylon-game-improved.js';
+        gameScript.onload = () => {
+          console.log('✓ Game script loaded successfully');
+          testGameInitialization();
+        };
+        gameScript.onerror = (e) => {
+          console.error('✗ Failed to load game script:', e);
+        };
+        document.head.appendChild(gameScript);
+      };
+      cannonScript.onerror = (e) => {
+        console.error('✗ Failed to load Cannon.js:', e);
+      };
+      document.head.appendChild(cannonScript);
+    };
+    babylonScript.onerror = (e) => {
+      console.error('✗ Failed to load Babylon.js:', e);
+    };
+    document.head.appendChild(babylonScript);
+    
+    function testGameInitialization() {
+      console.log('Testing game initialization...');
+      
+      // Check if required elements exist
+      const requiredElements = [
+        'loadingScreen', 'loadingProgress', 'scoreLabel', 'forceLabel', 
+        'gameStats', 'instructions', 'resetBtn', 'soundToggle',
+        'settingsBtn', 'statsBtn', 'pauseBtn'
+      ];
+      
+      // Create missing elements for testing
+      requiredElements.forEach(id => {
+        if (!document.getElementById(id)) {
+          const element = document.createElement('div');
+          element.id = id;
+          element.style.display = 'none';
+          document.body.appendChild(element);
+          console.log(`Created missing element: ${id}`);
+        }
+      });
+      
+      // Create canvas if missing
+      if (!document.getElementById('renderCanvas')) {
+        const canvas = document.createElement('canvas');
+        canvas.id = 'renderCanvas';
+        canvas.style.width = '800px';
+        canvas.style.height = '600px';
+        canvas.style.border = '1px solid #ccc';
+        document.body.appendChild(canvas);
+        console.log('Created renderCanvas element');
+      }
+      
+      // Try to initialize game
+      try {
+        console.log('Attempting to create BabylonGame instance...');
+        const game = new BabylonGame();
+        console.log('✓ BabylonGame instance created successfully');
+      } catch (error) {
+        console.error('✗ Failed to create BabylonGame instance:', error.message);
+        console.error('Stack trace:', error.stack);
+      }
+    }
+    
+    // Global error handler
+    window.addEventListener('error', (e) => {
+      console.error(`Global error: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`);
+    });
+    
+    window.addEventListener('unhandledrejection', (e) => {
+      console.error('Unhandled promise rejection:', e.reason);
+    });
+  </script>
+</body>
+</html>

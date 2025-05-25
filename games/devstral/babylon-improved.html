@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Babylon.js Physics Game - Improved</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loadingScreen">
+    <div class="loading-text">Loading Game...</div>
+    <div class="loading-bar">
+      <div class="loading-progress" id="loadingProgress"></div>
+    </div>
+  </div>  <!-- Game UI -->
+  <div id="scoreLabel" class="ui-element">Score: 0</div>
+  <div id="forceLabel" class="ui-element">Force: (0, 0, 0)</div>
+  <div id="gameStats" class="ui-element">Time: 0s | FPS: 60 | Level: 1</div>
+  <div id="instructions" class="ui-element">Arrow keys: Move | Space: Jump | WASD: Alternative controls | [ ] : Adjust Force</div>
+  
+  <!-- Force Control Panel -->
+  <div id="forceControl" class="ui-element" style="top: 100px; right: 200px; min-width: 180px; background: rgba(0,0,0,0.85);">
+    <div style="font-weight: bold; margin-bottom: 10px; color: #4CAF50;">Movement Force</div>
+    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+      <button id="forceDecrease" style="background: #ff4444; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-right: 8px;">-</button>
+      <input type="range" id="forceSlider" min="0.5" max="8" value="2" step="0.1" style="flex: 1; margin: 0 8px;">
+      <button id="forceIncrease" style="background: #44ff44; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer; margin-left: 8px;">+</button>
+    </div>
+    <div style="text-align: center; font-size: 14px;">
+      <span id="forceValue">2.0</span> / 8.0
+    </div>
+    <div style="font-size: 12px; color: #ccc; margin-top: 5px;">
+      Shortcuts: [ ] to adjust
+    </div>
+  </div>
+  
+  <button id="resetBtn" class="ui-element">Reset Game</button>
+  <button id="soundToggle" class="ui-element" style="top: 140px; right: 10px;">🔊 Sound</button>
+  <button id="settingsBtn" class="ui-element" style="top: 180px; right: 10px;">⚙️ Settings</button>
+  <button id="statsBtn" class="ui-element" style="top: 220px; right: 10px;">📊 Stats</button>
+  <button id="pauseBtn" class="ui-element" style="top: 260px; right: 10px;">⏸️ Pause</button>
+
+  <!-- Mobile Touch Controls -->
+  <div class="mobile-controls">
+    <button class="mobile-control-btn" id="mobileLeft">←</button>
+    <button class="mobile-control-btn" id="mobileUp">↑</button>
+    <button class="mobile-control-btn" id="mobileJump">⬆</button>
+    <button class="mobile-control-btn" id="mobileDown">↓</button>
+    <button class="mobile-control-btn" id="mobileRight">→</button>
+  </div>
+
+  <!-- Settings Menu -->
+  <div id="settingsMenu" class="menu-overlay">
+    <div class="menu-content settings-panel">
+      <h2 class="menu-title">Settings</h2>      <div class="setting-item">
+        <label class="setting-label">Graphics Quality:</label>
+        <select class="setting-input" id="qualitySelect">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div class="setting-item">
+        <label class="setting-label">Key Bindings:</label>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
+          <span>Move: Arrow Keys / WASD</span>
+          <span>Jump: Space</span>
+          <span>Pause: P</span>
+          <span>Reset: R</span>
+        </div>
+      </div>
+      <button class="menu-button" onclick="closeSettings()">Close</button>
+    </div>
+  </div>
+
+  <!-- Stats Panel -->
+  <div id="statsPanel" class="stats-panel">
+    <h3>Game Statistics</h3>
+    <div class="stats-grid">
+      <div><span>Level:</span> <span id="levelStat">1</span></div>
+      <div><span>Coins:</span> <span id="coinsStat">0</span></div>
+      <div><span>Score:</span> <span id="totalScoreStat">0</span></div>
+      <div><span>Best Time:</span> <span id="bestTimeStat">--</span></div>
+      <div><span>Power-ups Used:</span> <span id="powerupsStat">0</span></div>
+      <div><span>Jumps:</span> <span id="jumpsStat">0</span></div>
+      <div><span>FPS:</span> <span id="fpsStat">60</span></div>
+      <div><span>Avg FPS:</span> <span id="avgFpsStat">60</span></div>
+      <div><span>Quality:</span> <span id="qualityStat">Medium</span></div>
+    </div>
+  </div>
+
+  <!-- Performance Debug Panel -->
+  <div id="debugPanel" class="debug-panel">
+    <button id="debugToggle">🔧</button>
+    <div class="debug-content">
+      <h4>Performance</h4>
+      <div><span>FPS:</span> <span id="debugFps">60</span></div>
+      <div><span>Avg FPS:</span> <span id="debugAvgFps">60</span></div>
+      <div><span>Quality:</span> 
+        <select id="qualitySelect">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </div>
+      <div><span>Particles:</span> <span id="debugParticles">1000</span></div>
+      <div><span>Shadows:</span> <span id="debugShadows">On</span></div>
+    </div>
+  </div>
+
+  <!-- Pause Menu -->
+  <div id="pauseMenu" class="menu-overlay">
+    <div class="menu-content">
+      <h2 class="menu-title">Game Paused</h2>
+      <button class="menu-button" onclick="resumeGame()">Resume</button>
+      <button class="menu-button" onclick="resetGame()">Restart</button>
+      <button class="menu-button" onclick="openSettings()">Settings</button>
+    </div>
+  </div>
+
+  <!-- Level Notification -->
+  <div id="levelNotification" class="level-notification">
+    Level 2 Unlocked!
+  </div>
+
+  <canvas id="renderCanvas"></canvas>
+
+  <!-- Scripts -->
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/cannon.js"></script>
+  <script src="babylon-game-improved.js"></script>
+</body>
+</html>
