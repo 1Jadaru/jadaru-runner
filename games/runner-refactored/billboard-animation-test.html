@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Billboard Animation Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #00ffcc;
+            font-family: monospace;
+        }
+        .canvas-container {
+            border: 1px solid #00ffcc;
+            margin: 10px 0;
+            display: inline-block;
+        }
+        canvas {
+            display: block;
+        }
+        button {
+            background: #00ffcc;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+        #output {
+            background: #111;
+            border: 1px solid #00ffcc;
+            padding: 10px;
+            margin: 10px 0;
+            height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>Billboard Animation Direct Test</h1>
+    <p>Testing billboard canvas animations directly</p>
+    
+    <button onclick="testScrollText()">Test Scroll Text</button>
+    <button onclick="testPulseText()">Test Pulse Text</button>
+    <button onclick="testWaveText()">Test Wave Text</button>
+    <button onclick="testMatrixEffect()">Test Matrix Effect</button>
+    <button onclick="startAnimation()">Start Animation Loop</button>
+    <button onclick="stopAnimation()">Stop Animation</button>
+    
+    <div id="canvases"></div>
+    <div id="output"></div>
+
+    <script type="module">
+        import { CONFIG } from './src/core/config.js';
+        
+        let animationId = null;
+        let animationTime = 0;
+        const output = document.getElementById('output');
+        const canvasContainer = document.getElementById('canvases');
+        
+        function log(message) {
+            output.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // Create test canvas
+        function createTestCanvas(title) {
+            const container = document.createElement('div');
+            container.className = 'canvas-container';
+            
+            const label = document.createElement('div');
+            label.textContent = title;
+            container.appendChild(label);
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            canvas.style.width = '256px';
+            canvas.style.height = '128px';
+            container.appendChild(canvas);
+            
+            canvasContainer.appendChild(container);
+            
+            return {
+                canvas,
+                context: canvas.getContext('2d'),
+                container
+            };
+        }
+        
+        // Animation methods (copied from EnvironmentSystem)
+        function renderScrollingText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            // Update scroll offset
+            billboard.scrollOffset += 2; // TEXT_SCROLL_SPEED
+            if (billboard.scrollOffset > canvas.width + 200) {
+                billboard.scrollOffset = -200;
+            }
+            
+            // Render text with glow effect
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 20;
+            context.fillStyle = '#00ffcc';
+            
+            context.fillText(message, billboard.scrollOffset, canvas.height / 2);
+            context.shadowBlur = 0;
+        }
+        
+        function renderPulseText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            const pulse = Math.sin(time * 3) * 0.5 + 0.5; // PULSE_SPEED
+            const intensity = 0.5 + pulse * 0.5;
+            
+            context.shadowColor = `rgba(0, 255, 204, ${intensity})`;
+            context.shadowBlur = 30 * intensity;
+            context.fillStyle = `rgba(0, 255, 204, ${0.8 + intensity * 0.2})`;
+            
+            // Scale text with pulse
+            context.save();
+            context.translate(canvas.width / 2, canvas.height / 2);
+            context.scale(0.8 + pulse * 0.4, 0.8 + pulse * 0.4);
+            context.fillText(message, 0, 0);
+            context.restore();
+            
+            context.shadowBlur = 0;
+        }
+        
+        function renderWaveText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            context.fillStyle = '#00ffcc';
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 15;
+            
+            const letters = message.split('');
+            const letterWidth = canvas.width / letters.length;
+            
+            letters.forEach((letter, i) => {
+                const waveOffset = Math.sin(time + i * 0.5) * 20;
+                const x = i * letterWidth + letterWidth / 2;
+                const y = canvas.height / 2 + waveOffset;
+                
+                context.fillText(letter, x, y);
+            });
+            
+            context.shadowBlur = 0;
+        }
+        
+        function renderMatrixEffect(billboard, time) {
+            const { canvas, context } = billboard;
+            
+            context.font = '16px monospace';
+            context.fillStyle = '#00ff41';
+            
+            const cols = Math.floor(canvas.width / 16);
+            const rows = Math.floor(canvas.height / 20);
+            
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (Math.random() < 0.05) {
+                        const char = String.fromCharCode(Math.random() * 94 + 33);
+                        const alpha = Math.random();
+                        context.fillStyle = `rgba(0, 255, 65, ${alpha})`;
+                        context.fillText(char, i * 16, j * 20);
+                    }
+                }
+            }
+            
+            // Add title overlay
+            context.font = 'bold 28px Arial';
+            context.fillStyle = 'rgba(0, 255, 204, 0.9)';
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 10;
+            context.textAlign = 'center';
+            context.fillText('JADARU RUNNER', canvas.width / 2, canvas.height / 2);
+            context.shadowBlur = 0;
+        }
+        
+        function addScanLines(context, canvas) {
+            context.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            for (let i = 0; i < canvas.height; i += 4) {
+                context.fillRect(0, i, canvas.width, 2);
+            }
+        }
+        
+        function renderBillboardContent(billboard, time) {
+            const { canvas, context, type } = billboard;
+            
+            // Clear canvas
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Set common text properties
+            context.font = 'bold 32px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            switch (type) {
+                case 'scrollText':
+                    renderScrollingText(billboard, time);
+                    break;
+                case 'pulse':
+                    renderPulseText(billboard, time);
+                    break;
+                case 'wave':
+                    renderWaveText(billboard, time);
+                    break;
+                case 'matrix':
+                    renderMatrixEffect(billboard, time);
+                    break;
+            }
+            
+            // Add scan lines effect
+            addScanLines(context, canvas);
+        }
+        
+        let testCanvases = [];
+        
+        window.testScrollText = function() {
+            log('Testing scroll text animation...');
+            const test = createTestCanvas('Scroll Text');
+            const billboard = {
+                canvas: test.canvas,
+                context: test.context,
+                type: 'scrollText',
+                message: 'JADARU RUNNER - SCORE: 100',
+                scrollOffset: 0
+            };
+            testCanvases.push(billboard);
+            renderBillboardContent(billboard, 0);
+        };
+        
+        window.testPulseText = function() {
+            log('Testing pulse text animation...');
+            const test = createTestCanvas('Pulse Text');
+            const billboard = {
+                canvas: test.canvas,
+                context: test.context,
+                type: 'pulse',
+                message: 'PULSE TEXT'
+            };
+            testCanvases.push(billboard);
+            renderBillboardContent(billboard, 0);
+        };
+        
+        window.testWaveText = function() {
+            log('Testing wave text animation...');
+            const test = createTestCanvas('Wave Text');
+            const billboard = {
+                canvas: test.canvas,
+                context: test.context,
+                type: 'wave',
+                message: 'WAVE TEXT'
+            };
+            testCanvases.push(billboard);
+            renderBillboardContent(billboard, 0);
+        };
+        
+        window.testMatrixEffect = function() {
+            log('Testing matrix effect animation...');
+            const test = createTestCanvas('Matrix Effect');
+            const billboard = {
+                canvas: test.canvas,
+                context: test.context,
+                type: 'matrix',
+                message: 'MATRIX'
+            };
+            testCanvases.push(billboard);
+            renderBillboardContent(billboard, 0);
+        };
+        
+        window.startAnimation = function() {
+            if (animationId) return;
+            
+            log('Starting animation loop...');
+            
+            function animate() {
+                animationTime += 0.02;
+                
+                testCanvases.forEach(billboard => {
+                    renderBillboardContent(billboard, animationTime);
+                });
+                
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        };
+        
+        window.stopAnimation = function() {
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+                animationId = null;
+                log('Animation stopped');
+            }
+        };
+        
+        log('Billboard animation test ready');
+    </script>
+</body>
+</html>

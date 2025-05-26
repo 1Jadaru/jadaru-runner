@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game Billboard Consistency Test</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            max-width: 600px;
+        }
+        #texture-canvas {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 2px solid #00ffcc;
+            background: #000;
+        }
+        .warning { color: #ff6666; }
+        .success { color: #66ff66; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>🔍 Game Billboard Consistency Test</h3>
+        <p><strong>Testing:</strong> Exact game billboard rendering logic</p>
+        <p><strong>Focus:</strong> Wave text animation letter distribution</p>
+        <div id="test-status"></div>
+        <div id="debug-info"></div>
+    </div>
+
+    <!-- Show actual texture content -->
+    <canvas id="texture-canvas" width="512" height="256"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Replicate exact game configuration
+        const CONFIG = {
+            BILLBOARD: {
+                ANIMATION_SPEED: 0.02,
+                TEXT_SCROLL_SPEED: 2,
+                PULSE_SPEED: 3,
+                MESSAGES: [
+                    'JADARU RUNNER',
+                    'HIGH SPEED GAMING',
+                    'SCORE: 0',
+                    'LEVEL UP!',
+                    'KEEP RUNNING!',
+                    'DISTANCE: 0'
+                ],
+                PATTERN_TYPES: ['scrollText', 'pulse', 'wave', 'matrix']
+            }
+        };
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000011);
+        document.body.appendChild(renderer.domElement);
+
+        // Texture preview canvas
+        const textureCanvas = document.getElementById('texture-canvas');
+        const textureCtx = textureCanvas.getContext('2d');
+
+        // Replicate exact game texture creation
+        function createAnimatedTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            
+            // Initial content - start with visible text
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            context.fillStyle = '#00ffcc';
+            context.font = 'bold 40px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText('JADARU RUNNER', canvas.width / 2, canvas.height / 2);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            
+            // Configure texture for better updates and proper mapping
+            texture.generateMipmaps = false;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.flipY = false;
+            texture.needsUpdate = true;
+            
+            return { texture, canvas, context };
+        }
+
+        // Replicate exact game wave animation
+        function renderWaveText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            context.fillStyle = '#00ffcc';
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 15;
+            
+            const letters = billboard.message.split('');
+            const letterWidth = canvas.width / letters.length;
+            
+            letters.forEach((letter, i) => {
+                const waveOffset = Math.sin(time + i * 0.5) * 20;
+                const x = i * letterWidth + letterWidth / 2;
+                const y = canvas.height / 2 + waveOffset;
+                
+                context.fillText(letter, x, y);
+            });
+            
+            context.shadowBlur = 0;
+        }
+
+        // Replicate exact game pulse animation
+        function renderPulseText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            const pulse = Math.sin(time * CONFIG.BILLBOARD.PULSE_SPEED) * 0.5 + 0.5;
+            const intensity = 0.5 + pulse * 0.5;
+            
+            context.shadowColor = `rgba(0, 255, 204, ${intensity})`;
+            context.shadowBlur = 30 * intensity;
+            context.fillStyle = `rgba(0, 255, 204, ${0.8 + intensity * 0.2})`;
+            
+            let displayText = billboard.message;
+            
+            // Scale text with pulse
+            context.save();
+            context.translate(canvas.width / 2, canvas.height / 2);
+            context.scale(0.8 + pulse * 0.4, 0.8 + pulse * 0.4);
+            context.fillText(displayText, 0, 0);
+            context.restore();
+            
+            context.shadowBlur = 0;
+        }
+
+        // Replicate exact game billboard content rendering
+        function renderBillboardContent(billboard) {
+            const { canvas, context, type, phase, message, texture } = billboard;
+            const time = (Date.now() * 0.001 * CONFIG.BILLBOARD.ANIMATION_SPEED) + phase;
+            
+            // Clear canvas completely
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Set common text properties
+            context.font = 'bold 32px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            try {
+                switch (type) {
+                    case 'wave':
+                        renderWaveText(billboard, time);
+                        break;
+                    case 'pulse':
+                        renderPulseText(billboard, time);
+                        break;
+                    default:
+                        // Simple test text
+                        context.fillStyle = '#00ffcc';
+                        context.fillText(billboard.message || 'JADARU RUNNER', canvas.width / 2, canvas.height / 2);
+                }
+                
+                // Add test markers to check consistency
+                context.fillStyle = '#ffffff';
+                context.font = 'bold 12px Arial';
+                context.textAlign = 'left';
+                context.fillText('L', 10, 20);
+                context.textAlign = 'center';
+                context.fillText('C', canvas.width / 2, 20);
+                context.textAlign = 'right';
+                context.fillText('R', canvas.width - 10, 20);
+                
+                // Force texture update
+                texture.needsUpdate = true;
+                if (texture.version !== undefined) {
+                    texture.version++;
+                }
+                
+            } catch (error) {
+                console.error('Error rendering billboard content:', error);
+                context.fillStyle = '#ff6666';
+                context.fillText('ERROR', canvas.width / 2, canvas.height / 2);
+                texture.needsUpdate = true;
+            }
+        }
+
+        // Create test billboard using exact game setup
+        function createGameStyleBillboard(isLeft, animationType) {
+            const group = new THREE.Group();
+            
+            // Frame (exact game setup)
+            const frameGeometry = new THREE.BoxGeometry(3.4, 2.4, 0.1);
+            const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x555555 });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame.position.set(0, 2, -0.05);
+            frame.rotation.y = isLeft ? Math.PI / 36 : -Math.PI / 36;
+            group.add(frame);
+            
+            // Screen with exact game geometry and UV mapping
+            const screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+            
+            // Fix UV mapping - exactly as in game
+            const uvs = new Float32Array([
+                0, 1,  // bottom-left
+                1, 1,  // bottom-right  
+                1, 0,  // top-right
+                0, 0   // top-left
+            ]);
+            screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            
+            const { texture, canvas, context } = createAnimatedTexture();
+            
+            const screenMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: false
+            });
+
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 2, 0);
+            screen.rotation.y = isLeft ? Math.PI / 36 : -Math.PI / 36;
+            group.add(screen);
+            
+            // Position like in game
+            const sideOffset = isLeft ? -6 : 6;
+            group.position.set(sideOffset, 0, -8);
+            
+            // Store animation data like in game
+            const animationData = {
+                screen,
+                texture,
+                canvas,
+                context,
+                material: screenMaterial,
+                type: animationType,
+                phase: Math.random() * Math.PI * 2,
+                message: 'TEST CONSISTENCY WAVE',
+                scrollOffset: 0,
+                lastUpdate: 0
+            };
+            
+            return { group, ...animationData };
+        }
+
+        // Create test billboards
+        const leftBillboard = createGameStyleBillboard(true, 'wave');
+        const rightBillboard = createGameStyleBillboard(false, 'pulse');
+        
+        scene.add(leftBillboard.group);
+        scene.add(rightBillboard.group);
+
+        const billboards = [leftBillboard, rightBillboard];
+
+        // Camera position like in game
+        camera.position.set(0, 1.5, 0);
+        camera.lookAt(0, 2, -8);
+
+        // Test status elements
+        const testStatus = document.getElementById('test-status');
+        const debugInfo = document.getElementById('debug-info');
+
+        let frameCount = 0;
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            frameCount++;
+            
+            // Update billboard content
+            billboards.forEach(billboard => {
+                renderBillboardContent(billboard);
+            });
+            
+            // Update texture preview every 30 frames
+            if (frameCount % 30 === 0) {
+                // Show left billboard texture
+                textureCtx.drawImage(leftBillboard.canvas, 0, 0);
+                
+                // Analyze for consistency
+                const analysis = analyzeTextConsistency();
+                
+                testStatus.innerHTML = `
+                    <h4>📊 Consistency Analysis:</h4>
+                    <div class="${analysis.includes('CONSISTENT') ? 'success' : 'warning'}">
+                        ${analysis}
+                    </div>
+                `;
+                
+                debugInfo.innerHTML = `
+                    <strong>Frame:</strong> ${frameCount}<br>
+                    <strong>Left Billboard:</strong> ${leftBillboard.type} - "${leftBillboard.message}"<br>
+                    <strong>Right Billboard:</strong> ${rightBillboard.type} - "${rightBillboard.message}"<br>
+                    <strong>Canvas Size:</strong> ${leftBillboard.canvas.width}x${leftBillboard.canvas.height}<br>
+                    <strong>Analysis:</strong> Checking letter distribution in wave animation
+                `;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        function analyzeTextConsistency() {
+            const imageData = textureCtx.getImageData(0, 0, 512, 256);
+            const data = imageData.data;
+            
+            // Check if there are letters distributed across the full width
+            let leftHasContent = false;
+            let rightHasContent = false;
+            let centerHasContent = false;
+            
+            // Sample left quarter
+            for (let x = 50; x < 128; x++) {
+                for (let y = 100; y < 150; y++) {
+                    const idx = (y * 512 + x) * 4;
+                    if (data[idx] > 50 || data[idx + 1] > 50 || data[idx + 2] > 50) {
+                        leftHasContent = true;
+                        break;
+                    }
+                }
+                if (leftHasContent) break;
+            }
+            
+            // Sample center
+            for (let x = 230; x < 282; x++) {
+                for (let y = 100; y < 150; y++) {
+                    const idx = (y * 512 + x) * 4;
+                    if (data[idx] > 50 || data[idx + 1] > 50 || data[idx + 2] > 50) {
+                        centerHasContent = true;
+                        break;
+                    }
+                }
+                if (centerHasContent) break;
+            }
+            
+            // Sample right quarter
+            for (let x = 384; x < 462; x++) {
+                for (let y = 100; y < 150; y++) {
+                    const idx = (y * 512 + x) * 4;
+                    if (data[idx] > 50 || data[idx + 1] > 50 || data[idx + 2] > 50) {
+                        rightHasContent = true;
+                        break;
+                    }
+                }
+                if (rightHasContent) break;
+            }
+            
+            if (leftHasContent && centerHasContent && rightHasContent) {
+                return "✅ CONSISTENT: Content distributed across full billboard width";
+            } else if (centerHasContent) {
+                return "⚠️ PARTIAL: Content mostly in center, edges may be missing";
+            } else {
+                return `❌ ISSUE: Content distribution problem - L:${leftHasContent} C:${centerHasContent} R:${rightHasContent}`;
+            }
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

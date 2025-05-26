@@ -13,6 +13,31 @@ A modern, modular 3D endless runner game built with Three.js and ES6+ modules.
 - **Collision Detection**: Efficient AABB collision system
 - **Visual Effects**: Glow effects, particle systems, screen shake
 - **Configurable**: Centralized configuration system
+- **Animated Billboards**: Dynamic advertising displays with multiple animation types
+
+## 🔧 Recent Fixes
+
+### Billboard Animation System ✅ FULLY RESOLVED
+- **Previous Issues**: 
+  - Greenish color overlay on left half of billboards
+  - Half-missing content (left half blank on left billboards, right half blank on right billboards)
+  - Inconsistent animation display
+- **Root Causes Identified**: 
+  - Overlapping neon trim geometry interfering with screen texture
+  - Billboard rotation angle too steep (15°) causing viewing angle problems
+  - Inconsistent UV mapping coordinates
+- **Complete Solution Applied**:
+  - ✅ Removed problematic neon trim overlay eliminating color interference
+  - ✅ Reduced rotation angle from 15° to 5° preserving full content visibility
+  - ✅ Fixed UV mapping with explicit coordinates for proper texture display
+  - ✅ Restored all 4 animation types (scrollText, pulse, wave, matrix)
+- **Final Result**: Fully functional billboard system with clean displays showing complete animated content
+
+### Performance & Stability ✅
+- **Frame Rate**: Stable 60fps performance maintained
+- **Memory Management**: Optimized geometry complexity
+- **Visual Quality**: Sharp, clean billboard displays without artifacts
+- **Animation Smoothness**: All billboard animations running smoothly
 
 ## 📁 Project Structure
 
@@ -180,3 +205,14 @@ Potential improvements for future versions:
 - Physics engine integration
 - Asset loading system
 - Internationalization
+
+## 📺 Billboard System
+
+- **Dynamic Advertising Displays**: Interactive billboards along the roadside
+- **Multiple Animation Types**:
+  - **Scrolling Text**: Horizontally scrolling messages with dynamic content
+  - **Pulse Effects**: Breathing glow effects with scaling text
+  - **Wave Animations**: Wavy text effects with character-by-character movement
+  - **Matrix Effects**: Digital rain with cyber-punk styling
+- **Real-time Content**: Live score and distance displays
+- **Visual Consistency**: Clean rendering without color overlay issues

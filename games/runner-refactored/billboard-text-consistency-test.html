@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Billboard Text Consistency Test</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            max-width: 600px;
+        }
+        #canvas-debug {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 2px solid #00ffcc;
+            background: #000;
+        }
+        .warning { color: #ff6666; }
+        .success { color: #66ff66; }
+        .test { color: #66ccff; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>🔍 Billboard Text Consistency Test</h3>
+        <p class="warning"><strong>Testing Issue:</strong> Left/right halves may be behaving independently</p>
+        <p class="test"><strong>Test Method:</strong> Single unified text should span entire billboard</p>
+        <div id="test-results"></div>
+        <div id="debug-output"></div>
+    </div>
+
+    <!-- Canvas preview showing actual texture content -->
+    <canvas id="canvas-debug" width="512" height="256"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000011);
+        document.body.appendChild(renderer.domElement);
+
+        // Debug canvas to show actual texture content
+        const debugCanvas = document.getElementById('canvas-debug');
+        const debugCtx = debugCanvas.getContext('2d');
+
+        // Create test texture with consistent text across full width
+        function createConsistencyTestTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            
+            return { canvas, context };
+        }
+
+        // Render test patterns to check consistency
+        function renderConsistencyTest(billboard, testType, time) {
+            const { canvas, context } = billboard;
+            
+            // Clear canvas
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            switch (testType) {
+                case 'spanning-text':
+                    // Single text that should span the entire billboard
+                    context.fillStyle = '#00ffcc';
+                    context.font = 'bold 48px Arial';
+                    context.textAlign = 'center';
+                    context.textBaseline = 'middle';
+                    
+                    const spanningText = `CONSISTENCY TEST ${Math.floor(time % 10)}`;
+                    context.fillText(spanningText, canvas.width / 2, canvas.height / 2);
+                    
+                    // Add markers at quarter points
+                    context.fillStyle = '#ffffff';
+                    context.font = 'bold 16px Arial';
+                    context.fillText('25%', canvas.width * 0.25, 30);
+                    context.fillText('50%', canvas.width * 0.50, 30);
+                    context.fillText('75%', canvas.width * 0.75, 30);
+                    break;
+                    
+                case 'gradient-test':
+                    // Horizontal gradient that should be continuous
+                    const gradient = context.createLinearGradient(0, 0, canvas.width, 0);
+                    gradient.addColorStop(0, '#ff0000');    // Red left
+                    gradient.addColorStop(0.5, '#ffff00');  // Yellow center
+                    gradient.addColorStop(1, '#00ff00');    // Green right
+                    
+                    context.fillStyle = gradient;
+                    context.fillRect(0, 50, canvas.width, 150);
+                    
+                    // Add text over gradient
+                    context.fillStyle = '#000000';
+                    context.font = 'bold 32px Arial';
+                    context.textAlign = 'center';
+                    context.fillText('GRADIENT CONTINUITY', canvas.width / 2, canvas.height / 2);
+                    break;
+                    
+                case 'numbered-sections':
+                    // Number each section to track consistency
+                    const sections = 8;
+                    const sectionWidth = canvas.width / sections;
+                    
+                    for (let i = 0; i < sections; i++) {
+                        // Alternating colors
+                        context.fillStyle = i % 2 === 0 ? '#336633' : '#663366';
+                        context.fillRect(i * sectionWidth, 0, sectionWidth, canvas.height);
+                        
+                        // Section numbers
+                        context.fillStyle = '#ffffff';
+                        context.font = 'bold 24px Arial';
+                        context.textAlign = 'center';
+                        context.fillText(
+                            `${i + 1}`, 
+                            i * sectionWidth + sectionWidth / 2, 
+                            canvas.height / 2
+                        );
+                    }
+                    
+                    // Frame counter
+                    context.fillStyle = '#ffff00';
+                    context.font = 'bold 20px Arial';
+                    context.textAlign = 'center';
+                    context.fillText(`Frame: ${Math.floor(time * 10)}`, canvas.width / 2, 30);
+                    break;
+                    
+                case 'moving-bar':
+                    // Moving vertical bar to test sync
+                    const barX = ((time * 50) % (canvas.width + 40)) - 20;
+                    
+                    // Background
+                    context.fillStyle = '#002244';
+                    context.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    // Moving bar
+                    context.fillStyle = '#ffff00';
+                    context.fillRect(barX, 0, 20, canvas.height);
+                    
+                    // Position indicator
+                    context.fillStyle = '#ffffff';
+                    context.font = 'bold 16px Arial';
+                    context.textAlign = 'left';
+                    context.fillText(`Bar X: ${Math.floor(barX)}`, 10, 30);
+                    break;
+            }
+            
+            // Add border to check full canvas coverage
+            context.strokeStyle = '#ffffff';
+            context.lineWidth = 4;
+            context.strokeRect(2, 2, canvas.width - 4, canvas.height - 4);
+            
+            billboard.texture.needsUpdate = true;
+        }
+
+        // Create billboard with consistency test
+        function createConsistencyTestBillboard(testType, position, label) {
+            const group = new THREE.Group();
+            
+            // Frame
+            const frameGeometry = new THREE.BoxGeometry(3.4, 2.4, 0.1);
+            const frameMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x555555,
+                wireframe: true 
+            });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame.position.set(0, 2, -0.05);
+            group.add(frame);
+            
+            // Screen with corrected setup
+            const screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+            
+            // Ensure proper UV mapping
+            const uvs = new Float32Array([
+                0, 1,  // bottom-left
+                1, 1,  // bottom-right  
+                1, 0,  // top-right
+                0, 0   // top-left
+            ]);
+            screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            
+            const textureData = createConsistencyTestTexture();
+            const texture = new THREE.CanvasTexture(textureData.canvas);
+            texture.generateMipmaps = false;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.flipY = false;
+            texture.needsUpdate = true;
+            
+            const screenMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: false
+            });
+
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 2, 0);
+            // Use current game rotation
+            screen.rotation.y = position.x < 0 ? Math.PI / 36 : -Math.PI / 36;
+            group.add(screen);
+            
+            group.position.copy(position);
+            
+            // Add label
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.width = 256;
+            labelCanvas.height = 64;
+            const labelCtx = labelCanvas.getContext('2d');
+            labelCtx.fillStyle = '#000';
+            labelCtx.fillRect(0, 0, 256, 64);
+            labelCtx.fillStyle = '#fff';
+            labelCtx.font = 'bold 14px Arial';
+            labelCtx.textAlign = 'center';
+            labelCtx.fillText(label, 128, 32);
+            
+            const labelTexture = new THREE.CanvasTexture(labelCanvas);
+            const labelMaterial = new THREE.MeshBasicMaterial({ map: labelTexture });
+            const labelGeometry = new THREE.PlaneGeometry(3, 0.5);
+            const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
+            labelMesh.position.copy(position);
+            labelMesh.position.y = -0.5;
+            scene.add(labelMesh);
+            
+            return { group, ...textureData, texture, testType };
+        }
+
+        // Create test configurations
+        const testConfigs = [
+            { type: 'spanning-text', pos: new THREE.Vector3(-6, 0, -10), label: 'SPANNING TEXT' },
+            { type: 'gradient-test', pos: new THREE.Vector3(6, 0, -10), label: 'GRADIENT TEST' },
+            { type: 'numbered-sections', pos: new THREE.Vector3(-6, 0, -6), label: 'NUMBERED SECTIONS' },
+            { type: 'moving-bar', pos: new THREE.Vector3(6, 0, -6), label: 'MOVING BAR' }
+        ];
+
+        const testBillboards = [];
+        testConfigs.forEach(config => {
+            const billboard = createConsistencyTestBillboard(config.type, config.pos, config.label);
+            testBillboards.push(billboard);
+            scene.add(billboard.group);
+        });
+
+        // Position camera
+        camera.position.set(0, 2, 0);
+        camera.lookAt(0, 2, -8);
+
+        // Test results and debug output
+        const testResults = document.getElementById('test-results');
+        const debugOutput = document.getElementById('debug-output');
+
+        let frameCount = 0;
+        let lastAnalysis = '';
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            frameCount++;
+            
+            const time = Date.now() * 0.001;
+            
+            // Update all billboards
+            testBillboards.forEach(billboard => {
+                renderConsistencyTest(billboard, billboard.testType, time);
+            });
+            
+            // Update debug canvas with first billboard every 30 frames
+            if (frameCount % 30 === 0 && testBillboards.length > 0) {
+                const firstBillboard = testBillboards[0];
+                debugCtx.drawImage(firstBillboard.canvas, 0, 0);
+                
+                // Analyze texture for consistency issues
+                const imageData = debugCtx.getImageData(0, 0, 512, 256);
+                const analysis = analyzeConsistency(imageData);
+                
+                if (analysis !== lastAnalysis) {
+                    lastAnalysis = analysis;
+                    
+                    testResults.innerHTML = `
+                        <h4>🔍 Consistency Analysis:</h4>
+                        <div class="${analysis.includes('GOOD') ? 'success' : 'warning'}">
+                            ${analysis}
+                        </div>
+                    `;
+                }
+                
+                debugOutput.innerHTML = `
+                    <strong>Frame:</strong> ${frameCount}<br>
+                    <strong>Test Active:</strong> ${firstBillboard.testType}<br>
+                    <strong>Canvas Size:</strong> ${firstBillboard.canvas.width}x${firstBillboard.canvas.height}<br>
+                    <strong>Texture Updated:</strong> ${frameCount % 30 === 0 ? 'YES' : 'NO'}<br>
+                    <strong>Instructions:</strong> Look for text/patterns that should be continuous across billboard width
+                `;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        function analyzeConsistency(imageData) {
+            // Check for discontinuities in the middle
+            const width = 512;
+            const height = 256;
+            const data = imageData.data;
+            
+            let discontinuities = 0;
+            const centerX = Math.floor(width / 2);
+            
+            // Check vertical line through center for color consistency
+            for (let y = 10; y < height - 10; y++) {
+                const leftIdx = ((y * width) + centerX - 1) * 4;
+                const rightIdx = ((y * width) + centerX + 1) * 4;
+                
+                const leftColor = [data[leftIdx], data[leftIdx + 1], data[leftIdx + 2]];
+                const rightColor = [data[rightIdx], data[rightIdx + 1], data[rightIdx + 2]];
+                
+                const colorDiff = Math.abs(leftColor[0] - rightColor[0]) + 
+                                Math.abs(leftColor[1] - rightColor[1]) + 
+                                Math.abs(leftColor[2] - rightColor[2]);
+                
+                if (colorDiff > 50) { // Threshold for significant difference
+                    discontinuities++;
+                }
+            }
+            
+            const discontinuityRatio = discontinuities / (height - 20);
+            
+            if (discontinuityRatio < 0.1) {
+                return "✅ GOOD: Content appears consistent across billboard width";
+            } else if (discontinuityRatio < 0.3) {
+                return "⚠️ PARTIAL: Some inconsistencies detected at center line";
+            } else {
+                return "❌ ISSUE: Significant discontinuities - left/right halves may be independent";
+            }
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

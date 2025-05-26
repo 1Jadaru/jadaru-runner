@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Billboard Quick Fix Verification</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>✅ Billboard Fix Verification</h3>
+        <p><strong>Fix Applied:</strong> Removed billboard screen rotation</p>
+        <p><strong>Test:</strong> Both billboards should show full content</p>
+        <p><strong>Pattern:</strong> RED left half, GREEN right half</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Quick verification setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000011);
+        document.body.appendChild(renderer.domElement);
+
+        // Create test texture - clear pattern
+        function createTestTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            
+            // Clear background
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Left half RED, right half GREEN
+            context.fillStyle = '#ff3333';
+            context.fillRect(0, 0, canvas.width/2, canvas.height);
+            context.fillStyle = '#33ff33';
+            context.fillRect(canvas.width/2, 0, canvas.width/2, canvas.height);
+            
+            // Text labels
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 32px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText('LEFT', canvas.width/4, canvas.height/2);
+            context.fillText('RIGHT', canvas.width*3/4, canvas.height/2);
+            
+            // Border
+            context.strokeStyle = '#ffffff';
+            context.lineWidth = 6;
+            context.strokeRect(3, 3, canvas.width-6, canvas.height-6);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.generateMipmaps = false;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.flipY = false;
+            texture.needsUpdate = true;
+            
+            return texture;
+        }
+
+        // Create billboards in game positions (no rotation)
+        function createBillboard(isLeft) {
+            const group = new THREE.Group();
+            
+            // Frame
+            const frameGeometry = new THREE.BoxGeometry(3.4, 2.4, 0.1);
+            const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x555555 });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame.position.set(0, 2, -0.05);
+            // NO ROTATION - this is the fix
+            group.add(frame);
+            
+            // Screen with corrected UV mapping
+            const screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+            const uvs = new Float32Array([
+                0, 1,  // bottom-left
+                1, 1,  // bottom-right  
+                1, 0,  // top-right
+                0, 0   // top-left
+            ]);
+            screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            
+            const texture = createTestTexture();
+            const screenMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: false
+            });
+
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 2, 0);
+            // NO ROTATION - this is the fix
+            group.add(screen);
+            
+            // Position like in game
+            const sideOffset = isLeft ? -6 : 6;  // Game positioning
+            group.position.set(sideOffset, 0, -8);
+            
+            return group;
+        }
+
+        // Create both billboards
+        const leftBillboard = createBillboard(true);
+        const rightBillboard = createBillboard(false);
+        scene.add(leftBillboard);
+        scene.add(rightBillboard);
+
+        // Position camera like in game
+        camera.position.set(0, 1.5, 0);
+        camera.lookAt(0, 2, -8);
+
+        // Add some lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1);
+        scene.add(ambientLight);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

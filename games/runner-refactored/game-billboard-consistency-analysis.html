@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Billboard Consistency Analysis</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #00ffcc;
+            font-family: Arial, sans-serif;
+        }
+        #info {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 100;
+            color: #00ffcc;
+            font-size: 14px;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 15px;
+            border-radius: 5px;
+            max-width: 500px;
+            border: 1px solid #00ffcc;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+        .analysis-section {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(0, 255, 204, 0.1);
+            border-radius: 3px;
+        }
+        .pass { color: #00ff00; }
+        .warn { color: #ffaa00; }
+        .fail { color: #ff0000; }
+        .info { color: #00ffcc; }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>Game Billboard Consistency Analysis</h3>
+        <p>Analyzing the actual game billboard implementation for left/right consistency issues.</p>
+        <div id="analysis-results">
+            <div class="analysis-section">
+                <strong>Analysis in progress...</strong>
+            </div>
+        </div>
+        <p><strong>Controls:</strong></p>
+        <p>• Press SPACE: Run next analysis</p>
+        <p>• Press R: Reset camera</p>
+        <p>• Press T: Toggle animation types</p>
+        <p>• Press D: Enable detailed debugging</p>
+    </div>
+    
+    <div id="container"></div>
+
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.158.0';
+        
+        // Import the actual game configuration
+        const CONFIG = {
+            BILLBOARD: {
+                SCREEN_WIDTH: 512,
+                SCREEN_HEIGHT: 256,
+                PATTERN_TYPES: ['scrollText', 'pulse', 'wave', 'matrix'],
+                MESSAGES: [
+                    'JADARU RUNNER',
+                    'SCORE: 0',
+                    'DISTANCE: 0M',
+                    'NEON NIGHTS',
+                    'CYBERPUNK RUNNER',
+                    'RETRO GAMING'
+                ],
+                TEXT_SCROLL_SPEED: 2,
+                PULSE_SPEED: 2,
+                FADE_SPEED: 1
+            },
+            GAME: {
+                LANE_WIDTH: 4
+            },
+            ENVIRONMENT: {
+                BILLBOARD_COUNT: 4,
+                BILLBOARD_DISTANCE: 15
+            }
+        };
+
+        let scene, camera, renderer;
+        let billboards = [];
+        let billboardAnimations = [];
+        let animationTime = 0;
+        let updateCount = 0;
+        let detailedDebug = false;
+        let currentAnalysis = 0;
+
+        // Analysis tests
+        const analyses = [
+            {
+                name: "Surface Continuity Analysis",
+                description: "Check if billboard content flows continuously across the entire surface",
+                test: analyzeSurfaceContinuity
+            },
+            {
+                name: "UV Mapping Consistency",
+                description: "Verify UV mapping creates a unified texture space",
+                test: analyzeUVMapping
+            },
+            {
+                name: "Animation Synchronization",
+                description: "Check if animations affect the entire billboard uniformly",
+                test: analyzeAnimationSync
+            },
+            {
+                name: "Pixel Distribution Analysis", 
+                description: "Analyze pixel distribution patterns across billboard halves",
+                test: analyzePixelDistribution
+            },
+            {
+                name: "Edge Boundary Detection",
+                description: "Detect any artificial boundaries or discontinuities",
+                test: analyzeEdgeBoundaries
+            }
+        ];
+
+        function init() {
+            setupScene();
+            createGameBillboards();
+            setupEventListeners();
+            
+            // Start analysis
+            log("Game billboard consistency analysis initialized", "info");
+            runAnalysis(0);
+            
+            animate();
+        }
+
+        function setupScene() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setClearColor(0x000011);
+            document.getElementById('container').appendChild(renderer.domElement);
+
+            // Lighting (same as game)
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.0);
+            scene.add(ambientLight);
+
+            // Position camera
+            camera.position.set(0, 2, 10);
+            camera.lookAt(0, 2, 0);
+        }
+
+        function createGameBillboards() {
+            // Create billboards exactly as in the game
+            for (let i = 0; i < CONFIG.ENVIRONMENT.BILLBOARD_COUNT; i++) {
+                const leftBillboard = createBillboard(true, i);
+                const rightBillboard = createBillboard(false, i);
+                
+                leftBillboard.position.z = -i * CONFIG.ENVIRONMENT.BILLBOARD_DISTANCE;
+                rightBillboard.position.z = -i * CONFIG.ENVIRONMENT.BILLBOARD_DISTANCE;
+                
+                scene.add(leftBillboard);
+                scene.add(rightBillboard);
+                
+                billboards.push(leftBillboard, rightBillboard);
+            }
+            
+            log(`Created ${billboards.length} billboards (${CONFIG.ENVIRONMENT.BILLBOARD_COUNT} pairs)`, "info");
+        }
+
+        function createBillboard(isLeft, index) {
+            const group = new THREE.Group();
+            
+            // Frame
+            const frameGeometry = new THREE.BoxGeometry(3.4, 2.4, 0.1);
+            const frameMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x222222,
+                transparent: true,
+                opacity: 0.8
+            });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            
+            // Critical: Make frame and screen rotation consistent
+            frame.rotation.y = isLeft ? Math.PI / 36 : -Math.PI / 36;  // 5 degrees
+            group.add(frame);
+
+            // Screen with explicit UV mapping
+            const screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+            
+            // Explicit UV coordinates (CRITICAL for unified surface)
+            const uvs = new Float32Array([
+                0, 1,  // bottom-left
+                1, 1,  // bottom-right  
+                1, 0,  // top-right
+                0, 0   // top-left
+            ]);
+            screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+
+            // Canvas texture
+            const canvas = document.createElement('canvas');
+            canvas.width = CONFIG.BILLBOARD.SCREEN_WIDTH;
+            canvas.height = CONFIG.BILLBOARD.SCREEN_HEIGHT;
+            const context = canvas.getContext('2d');
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+
+            const screenMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                transparent: true,
+                side: THREE.DoubleSide
+            });
+
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.z = 0.06;
+            
+            // Critical: Same rotation as frame
+            screen.rotation.y = isLeft ? Math.PI / 36 : -Math.PI / 36;
+            group.add(screen);
+
+            // Animation data
+            const animationType = CONFIG.BILLBOARD.PATTERN_TYPES[
+                Math.floor(Math.random() * CONFIG.BILLBOARD.PATTERN_TYPES.length)
+            ];
+            const animationData = {
+                screen,
+                texture,
+                canvas,
+                context,
+                material: screenMaterial,
+                type: animationType,
+                phase: Math.random() * Math.PI * 2,
+                message: CONFIG.BILLBOARD.MESSAGES[
+                    Math.floor(Math.random() * CONFIG.BILLBOARD.MESSAGES.length)
+                ],
+                scrollOffset: 0,
+                lastUpdate: 0,
+                isLeft: isLeft,
+                index: index
+            };
+            billboardAnimations.push(animationData);
+
+            // Position
+            const sideOffset = isLeft ? -(CONFIG.GAME.LANE_WIDTH/2 + 2) : (CONFIG.GAME.LANE_WIDTH/2 + 2);
+            group.position.set(sideOffset, 2, 0);
+            
+            return group;
+        }
+
+        function updateBillboards() {
+            animationTime += 0.016;
+            updateCount++;
+            
+            billboardAnimations.forEach((billboard, index) => {
+                renderBillboardContent(billboard);
+            });
+        }
+
+        function renderBillboardContent(billboard) {
+            const { canvas, context, type, phase, message, texture } = billboard;
+            const time = animationTime + phase;
+            
+            // Clear canvas
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            context.font = 'bold 32px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            switch (type) {
+                case 'scrollText':
+                    renderScrollingText(billboard, time);
+                    break;
+                case 'pulse':
+                    renderPulseText(billboard, time);
+                    break;
+                case 'wave':
+                    renderWaveText(billboard, time);
+                    break;
+                case 'matrix':
+                    renderMatrixEffect(billboard, time);
+                    break;
+            }
+            
+            texture.needsUpdate = true;
+        }
+
+        function renderScrollingText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            billboard.scrollOffset += CONFIG.BILLBOARD.TEXT_SCROLL_SPEED;
+            if (billboard.scrollOffset > canvas.width + 200) {
+                billboard.scrollOffset = -200;
+            }
+            
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 20;
+            context.fillStyle = '#00ffcc';
+            
+            context.fillText(message, billboard.scrollOffset, canvas.height / 2);
+            context.shadowBlur = 0;
+        }
+
+        function renderPulseText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            const pulse = Math.sin(time * CONFIG.BILLBOARD.PULSE_SPEED) * 0.5 + 0.5;
+            const intensity = 0.5 + pulse * 0.5;
+            
+            context.shadowColor = `rgba(0, 255, 204, ${intensity})`;
+            context.shadowBlur = 30 * intensity;
+            context.fillStyle = `rgba(0, 255, 204, ${0.8 + intensity * 0.2})`;
+            
+            context.save();
+            context.translate(canvas.width / 2, canvas.height / 2);
+            context.scale(0.8 + pulse * 0.4, 0.8 + pulse * 0.4);
+            context.fillText(message, 0, 0);
+            context.restore();
+            
+            context.shadowBlur = 0;
+        }
+
+        function renderWaveText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            context.fillStyle = '#00ffcc';
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 15;
+            
+            const letters = message.split('');
+            const letterWidth = canvas.width / letters.length;
+            
+            letters.forEach((letter, i) => {
+                const waveOffset = Math.sin(time + i * 0.5) * 20;
+                const x = i * letterWidth + letterWidth / 2;
+                const y = canvas.height / 2 + waveOffset;
+                
+                context.fillText(letter, x, y);
+            });
+            
+            context.shadowBlur = 0;
+        }
+
+        function renderMatrixEffect(billboard, time) {
+            const { canvas, context } = billboard;
+            
+            context.font = '16px monospace';
+            context.fillStyle = '#00ffcc';
+            
+            const cols = Math.floor(canvas.width / 16);
+            const rows = Math.floor(canvas.height / 20);
+            
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (Math.random() < 0.05) {
+                        const char = String.fromCharCode(Math.random() * 94 + 33);
+                        const alpha = Math.random();
+                        context.fillStyle = `rgba(0, 255, 204, ${alpha})`;
+                        context.fillText(char, i * 16, j * 20);
+                    }
+                }
+            }
+            
+            context.font = 'bold 28px Arial';
+            context.fillStyle = 'rgba(0, 255, 204, 0.9)';
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 10;
+            context.textAlign = 'center';
+            context.fillText('JADARU RUNNER', canvas.width / 2, canvas.height / 2);
+            context.shadowBlur = 0;
+        }
+
+        function runAnalysis(index) {
+            if (index >= analyses.length) {
+                log("All analyses completed!", "pass");
+                return;
+            }
+
+            currentAnalysis = index;
+            const analysis = analyses[index];
+            
+            log(`Running: ${analysis.name}`, "info");
+            log(`Description: ${analysis.description}`, "info");
+            
+            // Wait a moment for animations to stabilize, then run analysis
+            setTimeout(() => {
+                analysis.test();
+                setTimeout(() => {
+                    if (index < analyses.length - 1) {
+                        runAnalysis(index + 1);
+                    }
+                }, 3000);
+            }, 1000);
+        }
+
+        function analyzeSurfaceContinuity() {
+            log("Analyzing surface continuity...", "info");
+            
+            let totalAnalyzed = 0;
+            let continuityIssues = 0;
+            
+            billboardAnimations.forEach((billboard, index) => {
+                const { canvas, context } = billboard;
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                
+                // Check for horizontal discontinuities
+                const discontinuities = checkHorizontalContinuity(imageData, canvas.width, canvas.height);
+                totalAnalyzed++;
+                
+                if (discontinuities > 10) {  // Threshold for significant issues
+                    continuityIssues++;
+                    log(`Billboard ${index}: ${discontinuities} discontinuities detected`, "warn");
+                } else {
+                    log(`Billboard ${index}: Surface appears continuous (${discontinuities} minor breaks)`, "pass");
+                }
+            });
+            
+            const continuityScore = ((totalAnalyzed - continuityIssues) / totalAnalyzed) * 100;
+            log(`Overall continuity score: ${continuityScore.toFixed(1)}%`, continuityScore > 80 ? "pass" : "warn");
+        }
+
+        function analyzeUVMapping() {
+            log("Analyzing UV mapping consistency...", "info");
+            
+            // Check if UV coordinates are properly set
+            billboards.forEach((billboard, index) => {
+                const screen = billboard.children.find(child => child.geometry && child.geometry.attributes.uv);
+                
+                if (screen && screen.geometry.attributes.uv) {
+                    const uvAttribute = screen.geometry.attributes.uv;
+                    const uvArray = uvAttribute.array;
+                    
+                    // Check if UV coordinates span full 0-1 range
+                    const minU = Math.min(uvArray[0], uvArray[2], uvArray[4], uvArray[6]);
+                    const maxU = Math.max(uvArray[0], uvArray[2], uvArray[4], uvArray[6]);
+                    const minV = Math.min(uvArray[1], uvArray[3], uvArray[5], uvArray[7]);
+                    const maxV = Math.max(uvArray[1], uvArray[3], uvArray[5], uvArray[7]);
+                    
+                    if (minU === 0 && maxU === 1 && minV === 0 && maxV === 1) {
+                        log(`Billboard ${index}: UV mapping spans full texture space ✓`, "pass");
+                    } else {
+                        log(`Billboard ${index}: UV mapping incomplete - U: ${minU}-${maxU}, V: ${minV}-${maxV}`, "warn");
+                    }
+                } else {
+                    log(`Billboard ${index}: No UV mapping found`, "fail");
+                }
+            });
+        }
+
+        function analyzeAnimationSync() {
+            log("Analyzing animation synchronization...", "info");
+            
+            // Group billboards by animation type and check synchronization
+            const typeGroups = {};
+            billboardAnimations.forEach((billboard, index) => {
+                if (!typeGroups[billboard.type]) {
+                    typeGroups[billboard.type] = [];
+                }
+                typeGroups[billboard.type].push({ billboard, index });
+            });
+            
+            Object.keys(typeGroups).forEach(type => {
+                const group = typeGroups[type];
+                if (group.length > 1) {
+                    log(`Checking ${group.length} billboards with ${type} animation`, "info");
+                    
+                    // For each pair, check if they're behaving as unified surfaces
+                    for (let i = 0; i < group.length - 1; i++) {
+                        const billboard1 = group[i].billboard;
+                        const billboard2 = group[i + 1].billboard;
+                        
+                        // Compare animation states
+                        const timeDiff = Math.abs(billboard1.phase - billboard2.phase);
+                        if (timeDiff < 0.1 || timeDiff > (Math.PI * 2 - 0.1)) {
+                            log(`Billboards ${group[i].index} and ${group[i + 1].index}: Synchronized ✓`, "pass");
+                        } else {
+                            log(`Billboards ${group[i].index} and ${group[i + 1].index}: Phase difference ${timeDiff.toFixed(2)}`, "info");
+                        }
+                    }
+                }
+            });
+        }
+
+        function analyzePixelDistribution() {
+            log("Analyzing pixel distribution...", "info");
+            
+            billboardAnimations.forEach((billboard, index) => {
+                const { canvas, context } = billboard;
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const data = imageData.data;
+                
+                // Analyze left vs right halves
+                const leftHalf = analyzeHalf(data, canvas.width, canvas.height, 0, canvas.width / 2);
+                const rightHalf = analyzeHalf(data, canvas.width, canvas.height, canvas.width / 2, canvas.width);
+                
+                const ratio = leftHalf.pixels > 0 ? rightHalf.pixels / leftHalf.pixels : 0;
+                
+                if (ratio > 0.5 && ratio < 2.0) {
+                    log(`Billboard ${index}: Balanced distribution (L:${leftHalf.pixels}, R:${rightHalf.pixels}) ✓`, "pass");
+                } else if (billboard.type === 'scrollText') {
+                    log(`Billboard ${index}: Uneven distribution expected for scrolling text`, "info");
+                } else {
+                    log(`Billboard ${index}: Uneven distribution (L:${leftHalf.pixels}, R:${rightHalf.pixels})`, "warn");
+                }
+            });
+        }
+
+        function analyzeEdgeBoundaries() {
+            log("Analyzing edge boundaries...", "info");
+            
+            billboardAnimations.forEach((billboard, index) => {
+                const { canvas, context } = billboard;
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                
+                const centerBoundaries = checkCenterBoundaries(imageData, canvas.width, canvas.height);
+                
+                if (centerBoundaries < 5) {
+                    log(`Billboard ${index}: No artificial center boundaries ✓`, "pass");
+                } else {
+                    log(`Billboard ${index}: ${centerBoundaries} potential boundaries detected`, "warn");
+                }
+            });
+        }
+
+        // Helper functions
+        function checkHorizontalContinuity(imageData, width, height) {
+            const data = imageData.data;
+            let discontinuities = 0;
+            
+            for (let y = 0; y < height; y++) {
+                let lastBrightness = 0;
+                for (let x = 0; x < width; x++) {
+                    const index = (y * width + x) * 4;
+                    const brightness = data[index] + data[index + 1] + data[index + 2];
+                    
+                    if (x > 0 && Math.abs(brightness - lastBrightness) > 200) {
+                        discontinuities++;
+                    }
+                    lastBrightness = brightness;
+                }
+            }
+            
+            return discontinuities;
+        }
+
+        function analyzeHalf(data, width, height, startX, endX) {
+            let pixels = 0;
+            let totalBrightness = 0;
+            
+            for (let y = 0; y < height; y++) {
+                for (let x = Math.floor(startX); x < Math.floor(endX); x++) {
+                    const index = (y * width + x) * 4;
+                    const brightness = data[index] + data[index + 1] + data[index + 2];
+                    
+                    if (brightness > 30) {
+                        pixels++;
+                        totalBrightness += brightness;
+                    }
+                }
+            }
+            
+            return { pixels, averageBrightness: pixels > 0 ? totalBrightness / pixels : 0 };
+        }
+
+        function checkCenterBoundaries(imageData, width, height) {
+            const data = imageData.data;
+            const centerX = Math.floor(width / 2);
+            let boundaries = 0;
+            
+            for (let y = 0; y < height; y++) {
+                const leftIndex = (y * width + (centerX - 1)) * 4;
+                const rightIndex = (y * width + (centerX + 1)) * 4;
+                
+                const leftBrightness = data[leftIndex] + data[leftIndex + 1] + data[leftIndex + 2];
+                const rightBrightness = data[rightIndex] + data[rightIndex + 1] + data[rightIndex + 2];
+                
+                if (Math.abs(leftBrightness - rightBrightness) > 150) {
+                    boundaries++;
+                }
+            }
+            
+            return boundaries;
+        }
+
+        function setupEventListeners() {
+            document.addEventListener('keydown', (event) => {
+                switch(event.code) {
+                    case 'Space':
+                        event.preventDefault();
+                        runAnalysis((currentAnalysis + 1) % analyses.length);
+                        break;
+                    case 'KeyR':
+                        camera.position.set(0, 2, 10);
+                        camera.lookAt(0, 2, 0);
+                        log("Camera reset", "info");
+                        break;
+                    case 'KeyT':
+                        // Toggle animation types for testing
+                        billboardAnimations.forEach(billboard => {
+                            const types = CONFIG.BILLBOARD.PATTERN_TYPES;
+                            const currentIndex = types.indexOf(billboard.type);
+                            billboard.type = types[(currentIndex + 1) % types.length];
+                        });
+                        log("Animation types toggled", "info");
+                        break;
+                    case 'KeyD':
+                        detailedDebug = !detailedDebug;
+                        log(`Detailed debugging ${detailedDebug ? 'enabled' : 'disabled'}`, "info");
+                        break;
+                }
+            });
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+
+        function log(message, type = "info") {
+            const resultsDiv = document.getElementById('analysis-results');
+            const resultElement = document.createElement('div');
+            resultElement.className = `analysis-section ${type}`;
+            resultElement.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            resultsDiv.appendChild(resultElement);
+            
+            // Keep only last 15 results
+            while (resultsDiv.children.length > 15) {
+                resultsDiv.removeChild(resultsDiv.firstChild);
+            }
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            updateBillboards();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        init();
+    </script>
+</body>
+</html>

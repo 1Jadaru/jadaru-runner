@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Billboard Fix Verification</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            max-width: 400px;
+        }
+        .status { 
+            padding: 5px;
+            margin: 5px 0;
+            border-radius: 3px;
+        }
+        .good { background: rgba(0, 255, 0, 0.2); }
+        .bad { background: rgba(255, 0, 0, 0.2); }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>🎮 Billboard Fix Verification</h3>
+        <div class="status good">✅ Neon trim overlay removed</div>
+        <div class="status good">✅ Billboard animations restored</div>
+        <div class="status good">✅ Color consistency fixed</div>
+        <p><strong>Animation Types:</strong></p>
+        <ul>
+            <li>🔄 Scrolling Text</li>
+            <li>💓 Pulsing Effect</li>
+            <li>🌊 Wave Animation</li>
+            <li>💚 Matrix Effect</li>
+        </ul>
+        <p>Use WASD to move around and observe the different billboard animations</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000011);
+        document.body.appendChild(renderer.domElement);
+
+        // Camera controls
+        const keys = { w: false, a: false, s: false, d: false };
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Billboard animation types
+        const animationTypes = ['scrollText', 'pulse', 'wave', 'matrix'];
+        const messages = ['JADARU RUNNER', 'SCORE: 1337', 'NEON CITY', 'CYBER PUNK'];
+
+        // Create animated texture for each type
+        function createAnimatedTexture(type, message) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            
+            // Clear background
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.generateMipmaps = false;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.needsUpdate = true;
+            
+            return { texture, canvas, context, type, message, scrollOffset: 0 };
+        }
+
+        // Animation rendering functions
+        function renderScrollingText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            // Update scroll offset
+            billboard.scrollOffset += 2;
+            if (billboard.scrollOffset > canvas.width + 200) {
+                billboard.scrollOffset = -200;
+            }
+            
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 20;
+            context.fillStyle = '#00ffcc';
+            context.font = 'bold 32px Arial';
+            context.textAlign = 'left';
+            context.textBaseline = 'middle';
+            context.fillText(message, billboard.scrollOffset, canvas.height / 2);
+            context.shadowBlur = 0;
+        }
+
+        function renderPulseText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const pulse = Math.sin(time * 3) * 0.5 + 0.5;
+            const intensity = 0.5 + pulse * 0.5;
+            
+            context.shadowColor = `rgba(0, 255, 204, ${intensity})`;
+            context.shadowBlur = 30 * intensity;
+            context.fillStyle = `rgba(0, 255, 204, ${0.8 + intensity * 0.2})`;
+            context.font = 'bold 32px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            context.save();
+            context.translate(canvas.width / 2, canvas.height / 2);
+            context.scale(0.8 + pulse * 0.4, 0.8 + pulse * 0.4);
+            context.fillText(message, 0, 0);
+            context.restore();
+            
+            context.shadowBlur = 0;
+        }
+
+        function renderWaveText(billboard, time) {
+            const { canvas, context, message } = billboard;
+            
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            context.fillStyle = '#00ffcc';
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 15;
+            context.font = 'bold 28px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            const letters = message.split('');
+            const letterWidth = canvas.width / letters.length;
+            
+            letters.forEach((letter, i) => {
+                const waveOffset = Math.sin(time + i * 0.5) * 20;
+                const x = i * letterWidth + letterWidth / 2;
+                const y = canvas.height / 2 + waveOffset;
+                context.fillText(letter, x, y);
+            });
+            
+            context.shadowBlur = 0;
+        }
+
+        function renderMatrixEffect(billboard, time) {
+            const { canvas, context } = billboard;
+            
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            context.font = '16px monospace';
+            
+            const cols = Math.floor(canvas.width / 16);
+            const rows = Math.floor(canvas.height / 20);
+            
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
+                    if (Math.random() < 0.05) {
+                        const char = String.fromCharCode(Math.random() * 94 + 33);
+                        const alpha = Math.random();
+                        context.fillStyle = `rgba(0, 255, 204, ${alpha})`;
+                        context.fillText(char, i * 16, j * 20);
+                    }
+                }
+            }
+            
+            // Add title overlay
+            context.font = 'bold 28px Arial';
+            context.fillStyle = 'rgba(0, 255, 204, 0.9)';
+            context.shadowColor = '#00ffcc';
+            context.shadowBlur = 10;
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(billboard.message, canvas.width / 2, canvas.height / 2);
+            context.shadowBlur = 0;
+        }
+
+        // Create clean billboards without neon trim
+        function createCleanBillboard(animationType, message, position) {
+            const group = new THREE.Group();
+            
+            // Support post
+            const postGeometry = new THREE.CylinderGeometry(0.1, 0.15, 3.5);
+            const postMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+            const post = new THREE.Mesh(postGeometry, postMaterial);
+            post.position.set(0, 1.75, -0.3);
+            group.add(post);
+            
+            // Frame
+            const frameGeometry = new THREE.BoxGeometry(3.4, 2.4, 0.1);
+            const frameMaterial = new THREE.MeshBasicMaterial({ color: 0x555555 });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame.position.set(0, 2, -0.05);
+            group.add(frame);
+            
+            // Screen with animated texture
+            const screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+            const animationData = createAnimatedTexture(animationType, message);
+            const screenMaterial = new THREE.MeshBasicMaterial({
+                map: animationData.texture,
+                side: THREE.DoubleSide,
+                transparent: false
+            });
+            
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 2, 0);
+            group.add(screen);
+            
+            group.position.copy(position);
+            
+            return { group, animationData };
+        }
+
+        // Create demonstration billboards
+        const billboards = [];
+        
+        // Position billboards in a line
+        animationTypes.forEach((type, index) => {
+            const position = new THREE.Vector3((index - 1.5) * 5, 0, -8);
+            const billboard = createCleanBillboard(type, messages[index], position);
+            billboards.push(billboard);
+            scene.add(billboard.group);
+        });
+
+        // Add labels for each billboard
+        function addLabel(text, position) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 64;
+            const context = canvas.getContext('2d');
+            
+            context.fillStyle = '#000000';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 20px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, canvas.width / 2, canvas.height / 2);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const geometry = new THREE.PlaneGeometry(2, 0.5);
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(position);
+            mesh.position.y -= 2;
+            scene.add(mesh);
+        }
+
+        const labels = ['Scrolling', 'Pulsing', 'Wave', 'Matrix'];
+        animationTypes.forEach((type, index) => {
+            const position = new THREE.Vector3((index - 1.5) * 5, 0, -8);
+            addLabel(labels[index], position);
+        });
+
+        // Position camera
+        camera.position.set(0, 2, 2);
+        camera.lookAt(0, 2, -8);
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            // Camera movement
+            const speed = 0.1;
+            if (keys.w) camera.position.z -= speed;
+            if (keys.s) camera.position.z += speed;
+            if (keys.a) camera.position.x -= speed;
+            if (keys.d) camera.position.x += speed;
+            
+            // Update billboard animations
+            const time = Date.now() * 0.001;
+            
+            billboards.forEach(billboard => {
+                const { animationData } = billboard;
+                
+                switch (animationData.type) {
+                    case 'scrollText':
+                        renderScrollingText(animationData, time);
+                        break;
+                    case 'pulse':
+                        renderPulseText(animationData, time);
+                        break;
+                    case 'wave':
+                        renderWaveText(animationData, time);
+                        break;
+                    case 'matrix':
+                        renderMatrixEffect(animationData, time);
+                        break;
+                }
+                
+                animationData.texture.needsUpdate = true;
+            });
+            
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

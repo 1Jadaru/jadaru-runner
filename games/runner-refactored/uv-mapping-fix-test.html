@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>UV Mapping Fix Test</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            max-width: 400px;
+        }
+        #texture-preview {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 2px solid #00ffcc;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>🔧 UV Mapping Fix Test</h3>
+        <p><strong>Issue:</strong> Half billboard content missing</p>
+        <p><strong>Testing:</strong> UV coordinate fixes</p>
+        <div id="debug-output"></div>
+    </div>
+
+    <!-- Canvas preview for texture -->
+    <canvas id="texture-preview" width="256" height="128"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000011);
+        document.body.appendChild(renderer.domElement);
+
+        // Create test canvas texture
+        function createTestTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            
+            // Clear with dark background
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Create clear test pattern - quarters in different colors
+            context.fillStyle = '#ff0000'; // Red - top left
+            context.fillRect(0, 0, canvas.width/2, canvas.height/2);
+            
+            context.fillStyle = '#00ff00'; // Green - top right
+            context.fillRect(canvas.width/2, 0, canvas.width/2, canvas.height/2);
+            
+            context.fillStyle = '#0000ff'; // Blue - bottom left
+            context.fillRect(0, canvas.height/2, canvas.width/2, canvas.height/2);
+            
+            context.fillStyle = '#ffff00'; // Yellow - bottom right
+            context.fillRect(canvas.width/2, canvas.height/2, canvas.width/2, canvas.height/2);
+            
+            // Add text labels in each quarter
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 20px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            context.fillText('TL-RED', canvas.width/4, canvas.height/4);
+            context.fillText('TR-GREEN', canvas.width*3/4, canvas.height/4);
+            context.fillText('BL-BLUE', canvas.width/4, canvas.height*3/4);
+            context.fillText('BR-YELLOW', canvas.width*3/4, canvas.height*3/4);
+            
+            // Add border
+            context.strokeStyle = '#ffffff';
+            context.lineWidth = 4;
+            context.strokeRect(2, 2, canvas.width-4, canvas.height-4);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.generateMipmaps = false;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.flipY = false;
+            texture.needsUpdate = true;
+            
+            return { texture, canvas, context };
+        }
+
+        // Create different UV mapping tests
+        function createBillboardTest(type, position) {
+            const group = new THREE.Group();
+            
+            // Frame reference
+            const frameGeometry = new THREE.BoxGeometry(3.4, 2.4, 0.1);
+            const frameMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x555555,
+                wireframe: true 
+            });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame.position.set(0, 2, -0.05);
+            group.add(frame);
+            
+            const { texture, canvas, context } = createTestTexture();
+            let screenGeometry;
+            
+            switch (type) {
+                case 'default':
+                    // Default PlaneGeometry
+                    screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+                    break;
+                    
+                case 'explicit-uv':
+                    // Explicit UV mapping
+                    screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+                    const uvs = new Float32Array([
+                        0, 0,  // bottom-left
+                        1, 0,  // bottom-right
+                        1, 1,  // top-right
+                        0, 1   // top-left
+                    ]);
+                    screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+                    break;
+                    
+                case 'corrected-uv':
+                    // Corrected UV coordinates
+                    screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+                    const correctedUvs = new Float32Array([
+                        0, 1,  // bottom-left (v flipped)
+                        1, 1,  // bottom-right (v flipped)
+                        1, 0,  // top-right (v flipped) 
+                        0, 0   // top-left (v flipped)
+                    ]);
+                    screenGeometry.setAttribute('uv', new THREE.BufferAttribute(correctedUvs, 2));
+                    break;
+            }
+            
+            // Log UV coordinates for debugging
+            const uvCoords = screenGeometry.attributes.uv.array;
+            console.log(`${type} UV coordinates:`, Array.from(uvCoords));
+            
+            const screenMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: false
+            });
+
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 2, 0);
+            group.add(screen);
+            
+            group.position.copy(position);
+            
+            return { group, texture, canvas, context, type };
+        }
+
+        // Create test configurations
+        const testConfigs = [
+            { type: 'default', pos: new THREE.Vector3(-4, 0, -6), label: 'DEFAULT' },
+            { type: 'explicit-uv', pos: new THREE.Vector3(0, 0, -6), label: 'EXPLICIT UV' },
+            { type: 'corrected-uv', pos: new THREE.Vector3(4, 0, -6), label: 'CORRECTED UV' }
+        ];
+
+        const testBillboards = [];
+        testConfigs.forEach(config => {
+            const billboard = createBillboardTest(config.type, config.pos);
+            testBillboards.push(billboard);
+            scene.add(billboard.group);
+            
+            // Add label
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.width = 256;
+            labelCanvas.height = 64;
+            const labelCtx = labelCanvas.getContext('2d');
+            labelCtx.fillStyle = '#000';
+            labelCtx.fillRect(0, 0, 256, 64);
+            labelCtx.fillStyle = '#fff';
+            labelCtx.font = 'bold 16px Arial';
+            labelCtx.textAlign = 'center';
+            labelCtx.fillText(config.label, 128, 32);
+            
+            const labelTexture = new THREE.CanvasTexture(labelCanvas);
+            const labelMaterial = new THREE.MeshBasicMaterial({ map: labelTexture });
+            const labelGeometry = new THREE.PlaneGeometry(2, 0.5);
+            const label = new THREE.Mesh(labelGeometry, labelMaterial);
+            label.position.copy(config.pos);
+            label.position.y = -0.5;
+            scene.add(label);
+        });
+
+        // Position camera
+        camera.position.set(0, 2, 2);
+        camera.lookAt(0, 2, -6);
+
+        // Preview canvas setup
+        const previewCanvas = document.getElementById('texture-preview');
+        const previewCtx = previewCanvas.getContext('2d');
+
+        // Update debug info
+        const debugOutput = document.getElementById('debug-output');
+        
+        let frameCount = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            frameCount++;
+            
+            // Update preview with first billboard's texture every 60 frames
+            if (frameCount % 60 === 0 && testBillboards.length > 0) {
+                const firstBillboard = testBillboards[0];
+                previewCtx.drawImage(firstBillboard.canvas, 0, 0, 256, 128);
+                
+                // Update debug info
+                debugOutput.innerHTML = `
+                    <strong>Frame:</strong> ${frameCount}<br>
+                    <strong>Billboards:</strong> ${testBillboards.length}<br>
+                    <strong>Expected:</strong> Should see 4 colored quarters<br>
+                    <strong>Issue:</strong> If half missing, UV mapping problem<br>
+                    <strong>Solution:</strong> Check which test shows full content
+                `;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

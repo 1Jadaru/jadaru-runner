@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Billboard Rotation Fix Test</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            max-width: 500px;
+        }
+        #controls {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>🔧 Billboard Rotation Fix Test</h3>
+        <p><strong>Issue:</strong> Left half blank on left billboard, right half blank on right billboard</p>
+        <p><strong>Hypothesis:</strong> Rotation angle causing visibility problem</p>
+        <p><strong>Testing:</strong> Different rotation angles</p>
+        <div id="debug-output"></div>
+    </div>
+    
+    <div id="controls">
+        <p><strong>Controls:</strong> WASD to move camera, Q/E to rotate camera</p>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000011);
+        document.body.appendChild(renderer.domElement);
+
+        // Camera controls
+        const keys = { w: false, a: false, s: false, d: false, q: false, e: false };
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Create test texture
+        function createTestTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            
+            // Clear with dark background
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Create clear test pattern with bright colors
+            context.fillStyle = '#ff0000'; // Red - left half
+            context.fillRect(0, 0, canvas.width/2, canvas.height);
+            
+            context.fillStyle = '#00ff00'; // Green - right half
+            context.fillRect(canvas.width/2, 0, canvas.width/2, canvas.height);
+            
+            // Add text labels
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 24px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            
+            context.fillText('LEFT', canvas.width/4, canvas.height/2);
+            context.fillText('RIGHT', canvas.width*3/4, canvas.height/2);
+            
+            // Add border
+            context.strokeStyle = '#ffffff';
+            context.lineWidth = 4;
+            context.strokeRect(2, 2, canvas.width-4, canvas.height-4);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.generateMipmaps = false;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.flipY = false;
+            texture.needsUpdate = true;
+            
+            return { texture, canvas, context };
+        }
+
+        // Create billboard test with different rotations
+        function createBillboardTest(isLeft, rotationAngle, position, label) {
+            const group = new THREE.Group();
+            
+            // Frame reference
+            const frameGeometry = new THREE.BoxGeometry(3.4, 2.4, 0.1);
+            const frameMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x555555,
+                wireframe: true 
+            });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame.position.set(0, 2, -0.05);
+            group.add(frame);
+            
+            // Screen with test texture
+            const screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+            
+            // Fix UV mapping
+            const uvs = new Float32Array([
+                0, 1,  // bottom-left
+                1, 1,  // bottom-right  
+                1, 0,  // top-right
+                0, 0   // top-left
+            ]);
+            screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            
+            const { texture } = createTestTexture();
+            
+            const screenMaterial = new THREE.MeshBasicMaterial({
+                map: texture,
+                side: THREE.DoubleSide,
+                transparent: false
+            });
+
+            const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+            screen.position.set(0, 2, 0);
+            screen.rotation.y = rotationAngle;  // Apply the rotation being tested
+            group.add(screen);
+            
+            // Position the group
+            const sideOffset = isLeft ? -6 : 6;  // Same logic as game
+            group.position.set(sideOffset + position.x, position.y, position.z);
+            
+            // Add label
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.width = 256;
+            labelCanvas.height = 64;
+            const labelCtx = labelCanvas.getContext('2d');
+            labelCtx.fillStyle = '#000';
+            labelCtx.fillRect(0, 0, 256, 64);
+            labelCtx.fillStyle = '#fff';
+            labelCtx.font = 'bold 14px Arial';
+            labelCtx.textAlign = 'center';
+            labelCtx.fillText(label, 128, 32);
+            
+            const labelTexture = new THREE.CanvasTexture(labelCanvas);
+            const labelMaterial = new THREE.MeshBasicMaterial({ map: labelTexture });
+            const labelGeometry = new THREE.PlaneGeometry(3, 0.5);
+            const labelMesh = new THREE.Mesh(labelGeometry, labelMaterial);
+            labelMesh.position.set(sideOffset + position.x, position.y - 1, position.z);
+            scene.add(labelMesh);
+            
+            return group;
+        }
+
+        // Create test configurations
+        const testConfigs = [
+            // Current game rotations
+            { isLeft: true, rotation: Math.PI / 12, pos: new THREE.Vector3(0, 0, -8), label: 'LEFT CURRENT (π/12)' },
+            { isLeft: false, rotation: -Math.PI / 12, pos: new THREE.Vector3(0, 0, -8), label: 'RIGHT CURRENT (-π/12)' },
+            
+            // No rotation test
+            { isLeft: true, rotation: 0, pos: new THREE.Vector3(0, 0, -5), label: 'LEFT NO ROTATION' },
+            { isLeft: false, rotation: 0, pos: new THREE.Vector3(0, 0, -5), label: 'RIGHT NO ROTATION' },
+            
+            // Different angles
+            { isLeft: true, rotation: Math.PI / 6, pos: new THREE.Vector3(0, 0, -2), label: 'LEFT ANGLE (π/6)' },
+            { isLeft: false, rotation: -Math.PI / 6, pos: new THREE.Vector3(0, 0, -2), label: 'RIGHT ANGLE (-π/6)' },
+        ];
+
+        // Create all test billboards
+        testConfigs.forEach(config => {
+            const billboard = createBillboardTest(config.isLeft, config.rotation, config.pos, config.label);
+            scene.add(billboard);
+        });
+
+        // Position camera - simulate game camera position
+        camera.position.set(0, 1.5, 0);  // Game camera position
+        camera.lookAt(0, 2, -8);
+
+        // Debug info
+        const debugOutput = document.getElementById('debug-output');
+        
+        let frameCount = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            frameCount++;
+            
+            // Camera movement
+            const speed = 0.1;
+            if (keys.w) camera.position.z -= speed;
+            if (keys.s) camera.position.z += speed;
+            if (keys.a) camera.position.x -= speed;
+            if (keys.d) camera.position.x += speed;
+            if (keys.q) camera.rotation.y += 0.02;
+            if (keys.e) camera.rotation.y -= 0.02;
+            
+            // Update debug info
+            if (frameCount % 60 === 0) {
+                debugOutput.innerHTML = `
+                    <strong>Frame:</strong> ${frameCount}<br>
+                    <strong>Camera:</strong> (${camera.position.x.toFixed(1)}, ${camera.position.y.toFixed(1)}, ${camera.position.z.toFixed(1)})<br>
+                    <strong>Camera Rotation:</strong> ${(camera.rotation.y * 180 / Math.PI).toFixed(1)}°<br>
+                    <strong>Test:</strong> Compare visibility of left/right halves<br>
+                    <strong>Expected:</strong> Should see both RED(left) and GREEN(right) halves
+                `;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

@@ -12,6 +12,8 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     this.trail = null;
     this.trailPoints = [];
     this.animationTime = 0;
+    this.updateCount = 0;
+    console.log('EnvironmentSystem constructor called');
     this.init();
   }
     /**
@@ -24,15 +26,18 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     this.createTrail();
     this.createBillboards();
     this.createScenery();
-  }
-  
-  /**
+  }  /**
    * Main update method called by game loop
-   */
-  update() {
+   */  update() {
+    this.updateCount++;
     this.updateRoadAnimation();
     this.updateTrail();
     this.updateBillboards();
+    
+    // Debug log every 30 frames (roughly twice per second)
+    if (this.updateCount % 30 === 0) {
+      console.log(`EnvironmentSystem update #${this.updateCount}, billboard animations: ${this.billboardAnimations.length}, billboards: ${this.billboards.length}`);
+    }
   }
   
   /**
@@ -265,28 +270,37 @@ export class EnvironmentSystem {  constructor(gameEngine) {
       color: 0x555555,
       metalness: 0.8,
       roughness: 0.2
-    });
-    const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+    });    const frame = new THREE.Mesh(frameGeometry, frameMaterial);
     frame.position.set(0, 2, -0.05);
-    frame.rotation.y = isLeft ? Math.PI / 6 : -Math.PI / 6;
+    // Fixed: Match screen rotation with minimal angle
+    frame.rotation.y = isLeft ? Math.PI / 36 : -Math.PI / 36;  // Very small angle (5 degrees)
     frame.castShadow = true;
-    group.add(frame);
-      // Billboard screen with animated content
-    const screenGeometry = new THREE.PlaneGeometry(3, 2);
+    group.add(frame);    // Billboard screen with animated content
+    const screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+    
+    // Fix UV mapping - explicitly set proper coordinates for full texture display
+    const uvs = new Float32Array([
+      0, 1,  // bottom-left
+      1, 1,  // bottom-right  
+      1, 0,  // top-right
+      0, 0   // top-left
+    ]);
+    screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    
+    console.log('UV coordinates corrected:', Array.from(uvs));
+    
     const { texture, canvas, context } = this.createAnimatedTexture();
-    const screenMaterial = new THREE.MeshStandardMaterial({
+    
+    const screenMaterial = new THREE.MeshBasicMaterial({
       map: texture,
-      metalness: 0.3,
-      roughness: 0.7,
-      emissive: 0x222222,
-      emissiveIntensity: 0.1
-    });
-    const screen = new THREE.Mesh(screenGeometry, screenMaterial);
+      side: THREE.DoubleSide,
+      transparent: false
+    });    const screen = new THREE.Mesh(screenGeometry, screenMaterial);
     screen.position.set(0, 2, 0);
-    screen.rotation.y = isLeft ? Math.PI / 6 : -Math.PI / 6;
-    group.add(screen);
-
-    // Store animation data for this billboard
+    // Fixed: Use minimal rotation to avoid half-missing billboard issue
+    // Original Math.PI/12 was too steep, causing viewing angle problems
+    screen.rotation.y = isLeft ? Math.PI / 36 : -Math.PI / 36;  // Very small angle (5 degrees)
+    group.add(screen);// Store animation data for this billboard
     const animationType = CONFIG.BILLBOARD.PATTERN_TYPES[
       Math.floor(Math.random() * CONFIG.BILLBOARD.PATTERN_TYPES.length)
     ];
@@ -295,6 +309,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
       texture,
       canvas,
       context,
+      material: screenMaterial,  // Store material reference
       type: animationType,
       phase: Math.random() * Math.PI * 2,
       message: CONFIG.BILLBOARD.MESSAGES[
@@ -304,22 +319,10 @@ export class EnvironmentSystem {  constructor(gameEngine) {
       lastUpdate: 0
     };
     this.billboardAnimations.push(animationData);
-    
-    // Neon trim
-    const neonGeometry = new THREE.BoxGeometry(3.2, 2.2, 0.05);
-    const neonMaterial = new THREE.MeshStandardMaterial({
-      color: CONFIG.COLORS.PRIMARY,
-      emissive: CONFIG.COLORS.PRIMARY,
-      emissiveIntensity: 0.5,
-      transparent: true,
-      opacity: 0.8
-    });
-    const neon = new THREE.Mesh(neonGeometry, neonMaterial);
-    neon.position.set(0, 2, 0.05);
-    neon.rotation.y = screen.rotation.y;
-    group.add(neon);
-    
-    // Position the group
+    console.log(`Created billboard animation: ${animationType}, total: ${this.billboardAnimations.length}`);
+      // NEON TRIM REMOVED - was causing color overlay issue
+    // The overlapping neon geometry was interfering with the screen texture
+    // Original issue: greenish overlay on left half of billboard    // Position the group
     const sideOffset = isLeft ? -(CONFIG.GAME.LANE_WIDTH/2 + 2) : (CONFIG.GAME.LANE_WIDTH/2 + 2);
     group.position.set(sideOffset, 0, 0);
     
@@ -558,9 +561,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
 
     // Update billboard animations
     this.updateBillboardAnimations();
-  }
-
-  /**
+  }  /**
    * Create animated texture for billboard screen
    */
   createAnimatedTexture() {
@@ -568,63 +569,126 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     canvas.width = 512;
     canvas.height = 256;
     const context = canvas.getContext('2d');
-    
-    // Initial clear
-    context.fillStyle = '#000011';
+      // Initial content - start with visible text
+    context.fillStyle = '#000011';  // Consistent dark background
     context.fillRect(0, 0, canvas.width, canvas.height);
     
-    const texture = new THREE.CanvasTexture(canvas);
+    context.fillStyle = '#00ffcc';
+    context.font = 'bold 40px Arial';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+    context.fillText('JADARU RUNNER', canvas.width / 2, canvas.height / 2);
+      const texture = new THREE.CanvasTexture(canvas);
+    
+    // Configure texture for better updates and proper mapping
+    texture.generateMipmaps = false;
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
+    texture.minFilter = THREE.LinearFilter;
+    texture.magFilter = THREE.LinearFilter;
+    texture.flipY = false; // Ensure proper orientation
     texture.needsUpdate = true;
     
+    console.log('Created animated texture canvas:', canvas.width, 'x', canvas.height, 'flipY:', texture.flipY);
+    
     return { texture, canvas, context };
-  }
-
-  /**
+  }/**
    * Update all billboard animations
    */
   updateBillboardAnimations() {
     this.animationTime += CONFIG.BILLBOARD.ANIMATION_SPEED;
     
-    this.billboardAnimations.forEach(billboard => {
-      this.renderBillboardContent(billboard);
+    if (this.billboardAnimations.length === 0) {
+      return;
+    }
+    
+    // Debug log every 120 frames (roughly every 2 seconds)
+    if (this.updateCount % 120 === 0) {
+      console.log('Updating billboard animations, count:', this.billboardAnimations.length, 'time:', this.animationTime.toFixed(2));
+    }
+      this.billboardAnimations.forEach((billboard, index) => {
+      try {        // Debug: Log animation details every 120 frames
+        if (this.updateCount % 120 === 0) {
+          console.log(`Billboard ${index}: type=${billboard.type}, canvas=${billboard.canvas.width}x${billboard.canvas.height}, texture=${billboard.texture ? 'exists' : 'missing'}, message=${billboard.message}`);
+        }
+        
+        // Use the proper animation system
+        this.renderBillboardContent(billboard);
+      } catch (error) {
+        console.error('Error updating billboard animation:', error);
+        
+        // Fallback: simple text render
+        const { canvas, context, texture } = billboard;
+        context.fillStyle = '#000011';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        context.fillStyle = '#00ffcc';
+        context.font = 'bold 40px Arial';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        context.fillText('JADARU RUNNER', canvas.width / 2, canvas.height / 2);
+        
+        texture.needsUpdate = true;
+      }
     });
-  }
-
-  /**
+  }  /**
    * Render animated content for a billboard
-   */
-  renderBillboardContent(billboard) {
-    const { canvas, context, type, phase, message } = billboard;
+   */  renderBillboardContent(billboard) {
+    const { canvas, context, type, phase, message, texture } = billboard;
     const time = this.animationTime + phase;
     
-    // Clear canvas
+    // Debug: Log that this method is being called
+    if (this.updateCount % 180 === 0) {
+      console.log(`renderBillboardContent called: type=${type}, time=${time.toFixed(2)}`);
+    }    // Clear canvas completely
+    context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#000011';
     context.fillRect(0, 0, canvas.width, canvas.height);
     
     // Set common text properties
     context.font = 'bold 32px Arial';
     context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    
-    switch (type) {
-      case 'scrollText':
-        this.renderScrollingText(billboard, time);
-        break;
-      case 'pulse':
-        this.renderPulseText(billboard, time);
-        break;
-      case 'wave':
-        this.renderWaveText(billboard, time);
-        break;
-      case 'matrix':
-        this.renderMatrixEffect(billboard, time);
-        break;
+    context.textBaseline = 'middle';    try {
+      switch (type) {
+        case 'scrollText':
+          this.renderScrollingText(billboard, time);
+          break;
+        case 'pulse':
+          this.renderPulseText(billboard, time);
+          break;
+        case 'wave':
+          this.renderWaveText(billboard, time);
+          break;
+        case 'matrix':
+          this.renderMatrixEffect(billboard, time);
+          break;
+        default:
+          // Fallback: simple text
+          context.fillStyle = '#00ffcc';
+          context.fillText(billboard.message || 'JADARU RUNNER', canvas.width / 2, canvas.height / 2);
+      }
+      
+      // Add scan lines effect
+      this.addScanLines(context, canvas);      // Force texture update
+      texture.needsUpdate = true;
+      
+      // Also try version increment (Three.js specific)
+      if (texture.version !== undefined) {
+        texture.version++;
+      }
+      
+      // Force material update as well
+      if (billboard.material) {
+        billboard.material.needsUpdate = true;
+      }
+      
+    } catch (error) {
+      console.error('Error rendering billboard content:', error);
+      // Fallback: render simple text
+      context.fillStyle = '#00ffcc';
+      context.fillText('JADARU RUNNER', canvas.width / 2, canvas.height / 2);
+      texture.needsUpdate = true;
     }
-    
-    // Add scan lines effect
-    this.addScanLines(context, canvas);
-    
-    billboard.texture.needsUpdate = true;
   }
 
   /**
@@ -651,8 +715,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     context.fillStyle = '#00ffcc';
     
     let displayText = billboard.message;
-    
-    // Add dynamic content for score/distance
+      // Add dynamic content for score/distance
     if (message.includes('SCORE:')) {
       const score = this.gameEngine.gameState?.score || 0;
       displayText = `SCORE: ${score}`;
@@ -677,8 +740,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     context.shadowColor = `rgba(0, 255, 204, ${intensity})`;
     context.shadowBlur = 30 * intensity;
     context.fillStyle = `rgba(0, 255, 204, ${0.8 + intensity * 0.2})`;
-    
-    let displayText = billboard.message;
+      let displayText = billboard.message;
     if (message.includes('SCORE:')) {
       displayText = `SCORE: ${this.gameEngine.gameState?.score || 0}`;
     }
@@ -719,12 +781,11 @@ export class EnvironmentSystem {  constructor(gameEngine) {
 
   /**
    * Render matrix-style effect
-   */
-  renderMatrixEffect(billboard, time) {
+   */  renderMatrixEffect(billboard, time) {
     const { canvas, context } = billboard;
     
     context.font = '16px monospace';
-    context.fillStyle = '#00ff41';
+    context.fillStyle = '#00ffcc';  // Changed to cyan to match other animations
     
     const cols = Math.floor(canvas.width / 16);
     const rows = Math.floor(canvas.height / 20);
@@ -734,7 +795,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
         if (Math.random() < 0.05) {
           const char = String.fromCharCode(Math.random() * 94 + 33);
           const alpha = Math.random();
-          context.fillStyle = `rgba(0, 255, 65, ${alpha})`;
+          context.fillStyle = `rgba(0, 255, 204, ${alpha})`;  // Changed to cyan
           context.fillText(char, i * 16, j * 20);
         }
       }

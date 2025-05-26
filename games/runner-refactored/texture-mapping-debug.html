@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Billboard Texture Mapping Debug</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; font-family: Arial, sans-serif; }
+        canvas { display: block; }
+        #info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            background: rgba(0,0,0,0.8);
+            padding: 15px;
+            border-radius: 5px;
+            z-index: 100;
+            max-width: 500px;
+        }
+        #canvas-preview {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: 2px solid #00ffcc;
+            background: #000;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h3>🔍 Billboard Texture Mapping Debug</h3>
+        <p><strong>Testing:</strong></p>
+        <ul>
+            <li>Canvas content generation</li>
+            <li>Texture mapping to geometry</li>
+            <li>UV coordinate correctness</li>
+            <li>Aspect ratio handling</li>
+        </ul>
+        <p>Use WASD to move camera around the billboard</p>
+        <div id="debug-info"></div>
+    </div>
+
+    <!-- Canvas preview to see actual texture content -->
+    <canvas id="canvas-preview" width="256" height="128"></canvas>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0x000011);
+        document.body.appendChild(renderer.domElement);
+
+        // Camera controls
+        const keys = { w: false, a: false, s: false, d: false };
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+
+        // Create debug canvas with clear patterns
+        function createDebugTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 256;
+            const context = canvas.getContext('2d');
+            
+            // Clear background
+            context.fillStyle = '#000011';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Create a grid pattern to identify UV mapping issues
+            context.strokeStyle = '#00ffcc';
+            context.lineWidth = 2;
+            
+            // Vertical lines
+            for (let x = 0; x <= canvas.width; x += canvas.width / 8) {
+                context.beginPath();
+                context.moveTo(x, 0);
+                context.lineTo(x, canvas.height);
+                context.stroke();
+            }
+            
+            // Horizontal lines
+            for (let y = 0; y <= canvas.height; y += canvas.height / 4) {
+                context.beginPath();
+                context.moveTo(0, y);
+                context.lineTo(canvas.width, y);
+                context.stroke();
+            }
+            
+            // Corner markers
+            context.fillStyle = '#ff0000';
+            context.fillRect(0, 0, 50, 50); // Top-left RED
+            context.fillStyle = '#00ff00';
+            context.fillRect(canvas.width - 50, 0, 50, 50); // Top-right GREEN
+            context.fillStyle = '#0000ff';
+            context.fillRect(0, canvas.height - 50, 50, 50); // Bottom-left BLUE
+            context.fillStyle = '#ffff00';
+            context.fillRect(canvas.width - 50, canvas.height - 50, 50, 50); // Bottom-right YELLOW
+            
+            // Center text
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 32px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText('TEXTURE TEST', canvas.width / 2, canvas.height / 2);
+            
+            // Add dimension labels
+            context.font = 'bold 16px Arial';
+            context.fillStyle = '#ffffff';
+            context.textAlign = 'left';
+            context.fillText(`${canvas.width}x${canvas.height}`, 10, 30);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            texture.generateMipmaps = false;
+            texture.wrapS = THREE.ClampToEdgeWrapping;
+            texture.wrapT = THREE.ClampToEdgeWrapping;
+            texture.minFilter = THREE.LinearFilter;
+            texture.magFilter = THREE.LinearFilter;
+            texture.needsUpdate = true;
+            
+            return { texture, canvas, context };
+        }
+
+        // Test different geometry configurations
+        function createTestBillboard(testType, position) {
+            const group = new THREE.Group();
+            
+            // Support post
+            const postGeometry = new THREE.CylinderGeometry(0.1, 0.15, 3.5);
+            const postMaterial = new THREE.MeshBasicMaterial({ color: 0x333333 });
+            const post = new THREE.Mesh(postGeometry, postMaterial);
+            post.position.set(0, 1.75, -0.3);
+            group.add(post);
+            
+            // Frame reference
+            const frameGeometry = new THREE.BoxGeometry(3.4, 2.4, 0.1);
+            const frameMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0x555555,
+                wireframe: true
+            });
+            const frame = new THREE.Mesh(frameGeometry, frameMaterial);
+            frame.position.set(0, 2, -0.05);
+            group.add(frame);
+            
+            let screenGeometry, material;
+            const { texture, canvas, context } = createDebugTexture();
+            
+            switch (testType) {
+                case 'standard':
+                    // Standard configuration
+                    screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+                    material = new THREE.MeshBasicMaterial({
+                        map: texture,
+                        side: THREE.DoubleSide,
+                        transparent: false
+                    });
+                    break;
+                    
+                case 'explicit-uv':
+                    // Explicit UV mapping
+                    screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+                    // Force UV coordinates
+                    const uvs = new Float32Array([
+                        0, 1,  // bottom-left
+                        1, 1,  // bottom-right
+                        1, 0,  // top-right
+                        0, 0   // top-left
+                    ]);
+                    screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+                    material = new THREE.MeshBasicMaterial({
+                        map: texture,
+                        side: THREE.DoubleSide,
+                        transparent: false
+                    });
+                    break;
+                    
+                case 'flipped-texture':
+                    // Test with flipped texture
+                    screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+                    texture.flipY = false; // Try without flip
+                    material = new THREE.MeshBasicMaterial({
+                        map: texture,
+                        side: THREE.DoubleSide,
+                        transparent: false
+                    });
+                    break;
+                    
+                case 'simple-color':
+                    // Simple colored material for reference
+                    screenGeometry = new THREE.PlaneGeometry(3.2, 2.2);
+                    material = new THREE.MeshBasicMaterial({
+                        color: 0x00ffcc,
+                        side: THREE.DoubleSide
+                    });
+                    break;
+            }
+            
+            const screen = new THREE.Mesh(screenGeometry, material);
+            screen.position.set(0, 2, 0);
+            group.add(screen);
+            
+            group.position.copy(position);
+            
+            return { group, texture, canvas, context, testType };
+        }
+
+        // Create test billboards
+        const testConfigs = [
+            { type: 'standard', pos: new THREE.Vector3(-6, 0, -8) },
+            { type: 'explicit-uv', pos: new THREE.Vector3(-2, 0, -8) },
+            { type: 'flipped-texture', pos: new THREE.Vector3(2, 0, -8) },
+            { type: 'simple-color', pos: new THREE.Vector3(6, 0, -8) }
+        ];
+
+        const testBillboards = [];
+        testConfigs.forEach(config => {
+            const billboard = createTestBillboard(config.type, config.pos);
+            testBillboards.push(billboard);
+            scene.add(billboard.group);
+        });
+
+        // Add labels
+        function addLabel(text, position) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 256;
+            canvas.height = 64;
+            const context = canvas.getContext('2d');
+            
+            context.fillStyle = '#000000';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#ffffff';
+            context.font = 'bold 16px Arial';
+            context.textAlign = 'center';
+            context.textBaseline = 'middle';
+            context.fillText(text, canvas.width / 2, canvas.height / 2);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const geometry = new THREE.PlaneGeometry(2, 0.5);
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.position.copy(position);
+            mesh.position.y -= 2.5;
+            scene.add(mesh);
+        }
+
+        // Add labels for each test
+        testConfigs.forEach(config => {
+            addLabel(config.type.toUpperCase(), config.pos);
+        });
+
+        // Position camera
+        camera.position.set(0, 2, 2);
+        camera.lookAt(0, 2, -8);
+
+        // Preview canvas setup
+        const previewCanvas = document.getElementById('canvas-preview');
+        const previewCtx = previewCanvas.getContext('2d');
+
+        // Debug info updates
+        const debugInfo = document.getElementById('debug-info');
+
+        // Animation loop
+        let frameCount = 0;
+        function animate() {
+            requestAnimationFrame(animate);
+            frameCount++;
+            
+            // Camera movement
+            const speed = 0.1;
+            if (keys.w) camera.position.z -= speed;
+            if (keys.s) camera.position.z += speed;
+            if (keys.a) camera.position.x -= speed;
+            if (keys.d) camera.position.x += speed;
+            
+            // Update texture content every 60 frames
+            if (frameCount % 60 === 0) {
+                testBillboards.forEach(billboard => {
+                    if (billboard.texture && billboard.context) {
+                        // Update canvas content
+                        const time = Date.now() * 0.001;
+                        
+                        billboard.context.fillStyle = '#000011';
+                        billboard.context.fillRect(0, 0, 512, 256);
+                        
+                        // Animated content
+                        billboard.context.fillStyle = `hsl(${(time * 50) % 360}, 100%, 50%)`;
+                        billboard.context.font = 'bold 24px Arial';
+                        billboard.context.textAlign = 'center';
+                        billboard.context.textBaseline = 'middle';
+                        billboard.context.fillText(`${billboard.testType.toUpperCase()}`, 256, 128);
+                        billboard.context.fillText(`Frame: ${frameCount}`, 256, 160);
+                        
+                        // Update corner markers
+                        billboard.context.fillStyle = `hsl(${(time * 100) % 360}, 100%, 50%)`;
+                        billboard.context.fillRect(10, 10, 20, 20);
+                        
+                        billboard.texture.needsUpdate = true;
+                        
+                        // Update preview canvas with first billboard
+                        if (billboard === testBillboards[0]) {
+                            previewCtx.drawImage(billboard.canvas, 0, 0, 256, 128);
+                        }
+                    }
+                });
+                
+                // Update debug info
+                debugInfo.innerHTML = `
+                    <strong>Frame:</strong> ${frameCount}<br>
+                    <strong>Camera:</strong> (${camera.position.x.toFixed(1)}, ${camera.position.y.toFixed(1)}, ${camera.position.z.toFixed(1)})<br>
+                    <strong>Tests:</strong> ${testBillboards.length} billboards created<br>
+                    <strong>Look for:</strong> Missing parts, incorrect UV mapping, color issues
+                `;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
