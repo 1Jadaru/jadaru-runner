@@ -50,8 +50,7 @@ export const CONFIG = {
     MAX_SPAWN_Z: -50,
     RESPAWN_Z: -60
   },
-  
-  // Environment
+    // Environment
   ENVIRONMENT: {
     BILLBOARD_COUNT: 4,
     BILLBOARD_DISTANCE: 60,
@@ -59,6 +58,24 @@ export const CONFIG = {
     STAR_RADIUS: 100,
     MOUNTAIN_COUNT: 50,
     TREE_COUNT: 100
+  },
+
+  // Billboard animations
+  BILLBOARD: {
+    ANIMATION_SPEED: 0.02,
+    TEXT_SCROLL_SPEED: 0.5,
+    PULSE_SPEED: 0.05,
+    PATTERN_TYPES: ['scrollText', 'pulse', 'wave', 'matrix'],
+    MESSAGES: [
+      'JADARU RUNNER',
+      'KEEP RUNNING!',
+      'SCORE: ',
+      'DISTANCE: ',
+      'SPEED BOOST!',
+      'WELL DONE!',
+      'NEW RECORD!',
+      'STAY FOCUSED'
+    ]
   },
   
   // Trail effect

@@ -4,8 +4,7 @@ import { CONFIG, STORAGE_KEYS } from './config.js';
 /**
  * Core game engine managing the main game loop and state
  */
-export class GameEngine {
-  constructor() {
+export class GameEngine {  constructor() {
     this.scene = null;
     this.camera = null;
     this.renderer = null;
@@ -14,6 +13,15 @@ export class GameEngine {
     this.score = 0;
     this.topScore = parseInt(localStorage.getItem(STORAGE_KEYS.TOP_SCORE)) || 0;
     this.speed = CONFIG.GAME.INITIAL_SPEED;
+    this.distance = 0;
+    
+    // Game state object for easy access by systems
+    this.gameState = {
+      score: 0,
+      distance: 0,
+      speed: CONFIG.GAME.INITIAL_SPEED,
+      topScore: this.topScore
+    };
     
     // Game objects
     this.entities = new Map();
@@ -139,8 +147,7 @@ export class GameEngine {
     // Create all game entities
     this.gameFactory.createAllEntities();
   }
-  
-  /**
+    /**
    * Main game loop
    */
   gameLoop() {
@@ -151,6 +158,9 @@ export class GameEngine {
     // Update performance monitoring
     this.fpsMonitor.update();
     
+    // Update game state
+    this.updateGameState();
+    
     // Update all systems
     for (const system of this.systems.values()) {
       if (system.update) {
@@ -160,6 +170,20 @@ export class GameEngine {
     
     // Render scene
     this.renderer.render(this.scene, this.camera);
+  }
+  
+  /**
+   * Update game state values
+   */
+  updateGameState() {
+    // Update distance based on speed
+    this.distance += this.speed;
+    
+    // Sync game state object
+    this.gameState.score = this.score;
+    this.gameState.distance = this.distance;
+    this.gameState.speed = this.speed;
+    this.gameState.topScore = this.topScore;
   }
   
   /**
