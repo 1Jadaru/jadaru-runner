@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Performance Test</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 20px; 
+            background: #111; 
+            color: #00ffcc; 
+            font-family: monospace; 
+        }
+        .test-panel {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border: 1px solid #00ffcc;
+            border-radius: 5px;
+            z-index: 1000;
+        }
+        .test-result {
+            margin: 5px 0;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff6666; }
+        .warning { color: #ffaa00; }
+    </style>
+</head>
+<body>
+    <h1>🎮 Jadaru Runner - Performance Test</h1>
+    <div class="test-panel">
+        <h3>Performance Monitor</h3>
+        <div id="fps">FPS: --</div>
+        <div id="entities">Entities: --</div>
+        <div id="systems">Systems: --</div>
+        <div id="score">Score: --</div>
+        <div id="speed">Speed: --</div>
+        <div id="status">Status: Loading...</div>
+        <button id="restart-btn">Restart Game</button>
+        <button id="pause-btn">Pause/Resume</button>
+    </div>
+
+    <div id="test-results"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script type="module">
+        import { JadaruRunner } from './src/main.js';
+
+        const testResults = document.getElementById('test-results');
+        const fpsDisplay = document.getElementById('fps');
+        const entitiesDisplay = document.getElementById('entities');
+        const systemsDisplay = document.getElementById('systems');
+        const scoreDisplay = document.getElementById('score');
+        const speedDisplay = document.getElementById('speed');
+        const statusDisplay = document.getElementById('status');
+        
+        function addTestResult(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+            testResults.appendChild(div);
+            testResults.scrollTop = testResults.scrollHeight;
+        }
+
+        async function runPerformanceTest() {
+            try {
+                addTestResult('🚀 Starting performance test...', 'success');
+                
+                // Initialize game
+                const runner = new JadaruRunner();
+                await runner.init();
+                
+                addTestResult('✅ Game initialized successfully', 'success');
+                statusDisplay.textContent = 'Status: Running';
+                
+                // Setup button handlers
+                document.getElementById('restart-btn').addEventListener('click', () => {
+                    runner.restartGame();
+                    addTestResult('🔄 Game restarted', 'warning');
+                });
+                
+                document.getElementById('pause-btn').addEventListener('click', () => {
+                    runner.togglePause();
+                    addTestResult('⏸️ Game pause toggled', 'warning');
+                });
+                
+                // Monitor performance
+                let frameCount = 0;
+                let lastTime = performance.now();
+                
+                function updateStats() {
+                    const stats = runner.getGameStats();
+                    if (stats) {
+                        entitiesDisplay.textContent = `Entities: ${stats.entityCount}`;
+                        systemsDisplay.textContent = `Systems: ${stats.systemCount}`;
+                        scoreDisplay.textContent = `Score: ${stats.score}`;
+                        speedDisplay.textContent = `Speed: ${stats.speed.toFixed(2)}`;
+                        statusDisplay.textContent = `Status: ${stats.isRunning ? 'Running' : (stats.gameOver ? 'Game Over' : 'Paused')}`;
+                    }
+                    
+                    // Calculate FPS
+                    frameCount++;
+                    const now = performance.now();
+                    if (now - lastTime > 1000) {
+                        const fps = Math.round(frameCount * 1000 / (now - lastTime));
+                        fpsDisplay.textContent = `FPS: ${fps}`;
+                        
+                        if (fps < 30) {
+                            addTestResult(`⚠️ Low FPS detected: ${fps}`, 'warning');
+                        }
+                        
+                        frameCount = 0;
+                        lastTime = now;
+                    }
+                    
+                    requestAnimationFrame(updateStats);
+                }
+                
+                updateStats();
+                
+                // Test game functionality after 2 seconds
+                setTimeout(() => {
+                    addTestResult('🧪 Testing game functions...', 'warning');
+                    
+                    // Test pause/resume
+                    runner.pauseGame();
+                    setTimeout(() => {
+                        runner.resumeGame();
+                        addTestResult('✅ Pause/Resume test passed', 'success');
+                    }, 1000);
+                    
+                }, 2000);
+                
+                // Memory usage test
+                if (performance.memory) {
+                    setInterval(() => {
+                        const memory = performance.memory;
+                        const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
+                        const totalMB = Math.round(memory.totalJSHeapSize / 1024 / 1024);
+                        
+                        if (usedMB > 100) {
+                            addTestResult(`⚠️ High memory usage: ${usedMB}MB / ${totalMB}MB`, 'warning');
+                        }
+                    }, 10000);
+                }
+                
+                addTestResult('✅ Performance monitoring started', 'success');
+                
+            } catch (error) {
+                addTestResult(`❌ Test failed: ${error.message}`, 'error');
+                console.error('Performance test error:', error);
+                statusDisplay.textContent = 'Status: Error';
+            }
+        }
+
+        // Start the performance test
+        runPerformanceTest();
+    </script>
+</body>
+</html>

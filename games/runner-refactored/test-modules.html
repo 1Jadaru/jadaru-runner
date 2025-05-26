@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Module Test</title>
+</head>
+<body>
+    <div id="test-output"></div>
+    <script type="module">
+        const output = document.getElementById('test-output');
+        
+        async function testModules() {
+            try {
+                output.innerHTML += '<p>Testing module imports...</p>';
+                
+                // Test core modules
+                const { CONFIG } = await import('./src/core/config.js');
+                output.innerHTML += '<p>✅ Config loaded</p>';
+                
+                const { GameEngine } = await import('./src/core/GameEngine.js');
+                output.innerHTML += '<p>✅ GameEngine loaded</p>';
+                
+                const { GameFactory } = await import('./src/core/GameFactory.js');
+                output.innerHTML += '<p>✅ GameFactory loaded</p>';
+                
+                // Test entities
+                const { Player } = await import('./src/entities/Player.js');
+                output.innerHTML += '<p>✅ Player loaded</p>';
+                
+                const { Obstacle } = await import('./src/entities/Obstacle.js');
+                output.innerHTML += '<p>✅ Obstacle loaded</p>';
+                
+                // Test systems
+                const { InputSystem } = await import('./src/systems/InputSystem.js');
+                output.innerHTML += '<p>✅ InputSystem loaded</p>';
+                
+                const { PhysicsSystem } = await import('./src/systems/PhysicsSystem.js');
+                output.innerHTML += '<p>✅ PhysicsSystem loaded</p>';
+                
+                const { CollisionSystem } = await import('./src/systems/CollisionSystem.js');
+                output.innerHTML += '<p>✅ CollisionSystem loaded</p>';
+                
+                const { RenderSystem } = await import('./src/systems/RenderSystem.js');
+                output.innerHTML += '<p>✅ RenderSystem loaded</p>';
+                
+                const { AudioSystem } = await import('./src/systems/AudioSystem.js');
+                output.innerHTML += '<p>✅ AudioSystem loaded</p>';
+                
+                const { UISystem } = await import('./src/ui/UISystem.js');
+                output.innerHTML += '<p>✅ UISystem loaded</p>';
+                
+                const { EnvironmentSystem } = await import('./src/environment/EnvironmentSystem.js');
+                output.innerHTML += '<p>✅ EnvironmentSystem loaded</p>';
+                
+                output.innerHTML += '<h3>🎉 All modules loaded successfully!</h3>';
+                
+                // Test basic functionality
+                output.innerHTML += '<p>Testing basic game initialization...</p>';
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                const ctx = canvas.getContext('2d');
+                
+                const gameEngine = new GameEngine(canvas, ctx);
+                output.innerHTML += '<p>✅ GameEngine instance created</p>';
+                
+            } catch (error) {
+                output.innerHTML += `<p style="color: red">❌ Error: ${error.message}</p>`;
+                console.error('Module test error:', error);
+            }
+        }
+        
+        testModules();
+    </script>
+</body>
+</html>
