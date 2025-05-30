@@ -190,6 +190,17 @@ body {
   font-size: 0.9rem;
 }
 
+.site-footer a {
+  color: #00C853;
+  text-decoration: none;
+  transition: color 0.2s ease-in-out;
+}
+
+.site-footer a:hover {
+  color: #D500F9;
+  text-decoration: underline;
+}
+
 /* Animations */
 @keyframes fadeIn {
   from {
