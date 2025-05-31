@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Movement Debug</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #1a1a1a;
+      color: white;
+    }
+    .debug-container {
+      display: flex;
+      gap: 20px;
+    }
+    .game-area {
+      flex: 1;
+    }
+    .debug-panel {
+      width: 300px;
+      background: #2a2a2a;
+      padding: 15px;
+      border-radius: 8px;
+    }
+    .debug-output {
+      background: #000;
+      color: #0f0;
+      padding: 10px;
+      border-radius: 4px;
+      height: 400px;
+      overflow-y: scroll;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+    }
+    #game-canvas {
+      border: 2px solid #444;
+      background: #111;
+    }
+    .controls {
+      margin: 10px 0;
+      padding: 10px;
+      background: #333;
+      border-radius: 4px;
+    }
+    button {
+      margin: 5px;
+      padding: 8px 16px;
+      background: #555;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #666;
+    }
+  </style>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+</head>
+<body>
+  <h1>Snake Movement Debug</h1>
+  
+  <div class="debug-container">
+    <div class="game-area">
+      <canvas id="game-canvas" width="600" height="600"></canvas>
+      
+      <div class="controls">
+        <button onclick="debugGame.testDirection(0, -1)">Test UP (0, -1)</button>
+        <button onclick="debugGame.testDirection(0, 1)">Test DOWN (0, 1)</button>
+        <button onclick="debugGame.testDirection(-1, 0)">Test LEFT (-1, 0)</button>
+        <button onclick="debugGame.testDirection(1, 0)">Test RIGHT (1, 0)</button>
+        <br>
+        <button onclick="debugGame.start()">Start Game</button>
+        <button onclick="debugGame.pause()">Pause</button>
+        <button onclick="debugGame.reset()">Reset</button>
+        <button onclick="clearDebugOutput()">Clear Log</button>
+      </div>
+    </div>
+    
+    <div class="debug-panel">
+      <h3>Debug Output</h3>
+      <div class="debug-output" id="debug-output"></div>
+      
+      <h4>Current State</h4>
+      <div id="game-state">
+        <div>Snake Direction: <span id="snake-direction">N/A</span></div>
+        <div>Snake Head: <span id="snake-head">N/A</span></div>
+        <div>Snake Length: <span id="snake-length">N/A</span></div>
+        <div>Game State: <span id="game-state-text">N/A</span></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { Game } from './src/game.js';
+
+    class DebugGame {
+      constructor() {
+        this.canvas = document.getElementById('game-canvas');
+        this.engine = null;
+        this.scene = null;
+        this.game = null;
+        this.debugOutput = document.getElementById('debug-output');
+        
+        this.init();
+        this.setupDebugLogging();
+        
+        // Update state display every 100ms
+        setInterval(() => this.updateStateDisplay(), 100);
+      }
+
+      async init() {
+        try {
+          this.engine = new BABYLON.Engine(this.canvas, true);
+          this.scene = new BABYLON.Scene(this.engine);
+          
+          this.game = new Game(this.scene);
+          this.game.init();
+          
+          this.engine.runRenderLoop(() => {
+            this.scene.render();
+            if (this.game) {
+              this.game.update(this.engine.getDeltaTime());
+            }
+          });
+
+          this.log('Debug game initialized');
+        } catch (error) {
+          this.log('ERROR: ' + error.message);
+        }
+      }
+
+      setupDebugLogging() {
+        // Override console.log to capture output
+        const originalLog = console.log;
+        console.log = (...args) => {
+          originalLog.apply(console, args);
+          this.log(args.join(' '));
+        };
+      }
+
+      log(message) {
+        const timestamp = new Date().toLocaleTimeString();
+        this.debugOutput.innerHTML += `[${timestamp}] ${message}\n`;
+        this.debugOutput.scrollTop = this.debugOutput.scrollHeight;
+      }
+
+      testDirection(x, y) {
+        this.log(`\n=== TESTING DIRECTION (${x}, ${y}) ===`);
+        if (this.game && this.game.inputHandler) {
+          this.game.inputHandler.queueDirection({ x, y });
+          this.log(`Direction (${x}, ${y}) queued for testing`);
+        }
+      }
+
+      start() {
+        if (this.game) {
+          this.game.startGame();
+          this.log('Game started');
+        }
+      }
+
+      pause() {
+        if (this.game) {
+          this.game.pauseGame();
+          this.log('Game paused');
+        }
+      }
+
+      reset() {
+        if (this.game) {
+          this.game.resetGame();
+          this.log('Game reset');
+        }
+      }
+
+      updateStateDisplay() {
+        if (!this.game || !this.game.snake) return;
+
+        try {
+          const snake = this.game.snake;
+          const head = snake.getHeadPosition();
+          
+          document.getElementById('snake-direction').textContent = 
+            `(${snake.direction.x}, ${snake.direction.y})`;
+          document.getElementById('snake-head').textContent = 
+            head ? `(${head.x}, ${head.y})` : 'N/A';
+          document.getElementById('snake-length').textContent = 
+            snake.body ? snake.body.length : 'N/A';
+          document.getElementById('game-state-text').textContent = 
+            this.game.state || 'N/A';
+        } catch (error) {
+          // Ignore errors during state update
+        }
+      }
+    }
+
+    function clearDebugOutput() {
+      document.getElementById('debug-output').innerHTML = '';
+    }
+
+    window.debugGame = new DebugGame();
+    window.clearDebugOutput = clearDebugOutput;
+  </script>
+</body>
+</html>

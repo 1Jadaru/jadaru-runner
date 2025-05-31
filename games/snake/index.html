@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game - Babylon.js</title>
+  <link rel="stylesheet" href="styles/main.css">
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+</head>
+<body>
+  <div class="game-container">
+    <div class="game-area">
+      <div class="game-header">
+        <h1>🐍 Snake Game</h1>
+        <div class="game-info">
+          <div class="score">Score: <span id="score">0</span></div>
+          <div class="high-score">High Score: <span id="high-score">0</span></div>
+        </div>
+      </div>
+      
+      <div class="canvas-container">
+        <canvas id="game-canvas" width="600" height="600"></canvas>
+        <div class="game-overlay" id="game-overlay">
+          <div class="game-message" id="game-message">
+            <h2>Press SPACE to Start</h2>
+            <p>Use arrow keys or WASD to control the snake</p>
+          </div>
+        </div>
+      </div>      <div class="controls">
+        <div class="control-info">
+          <p><strong>Controls:</strong> Arrow Keys or WASD</p>
+          <p><strong>Start/Restart:</strong> SPACE</p>
+          <p><strong>Pause:</strong> P</p>
+          <button id="toggle-virtual-controls" class="toggle-controls-btn">Show Virtual Controls</button>
+        </div>
+      </div>
+
+      <!-- Mobile Virtual Controls -->
+      <div class="mobile-controls" id="mobile-controls">
+        <div class="dpad-container">
+          <div class="dpad">
+            <button class="dpad-btn dpad-up" data-direction="up">▲</button>
+            <button class="dpad-btn dpad-left" data-direction="left">◀</button>
+            <button class="dpad-btn dpad-center" data-action="start">●</button>
+            <button class="dpad-btn dpad-right" data-direction="right">▶</button>
+            <button class="dpad-btn dpad-down" data-direction="down">▼</button>
+          </div>
+        </div>
+        <div class="action-buttons">
+          <button class="action-btn pause-btn" data-action="pause">⏸</button>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Ad Container for AdSense -->
+    <div id="ad-container" class="ad-container">
+      <div class="ad-placeholder">
+        <p>Advertisement Space</p>
+        <p>300x600 Banner</p>
+        <!-- AdSense code will go here -->
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

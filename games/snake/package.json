@@ -1,0 +1,32 @@
+{
+  "name": "babylon-snake-game",
+  "version": "1.0.0",
+  "description": "Classic Snake game built with Babylon.js and modern JavaScript",
+  "main": "index.html",
+  "type": "module",
+  "scripts": {
+    "dev": "live-server --port=8080 --open=/index.html",
+    "lint": "eslint src/**/*.js",
+    "lint:fix": "eslint src/**/*.js --fix",
+    "format": "prettier --write \"src/**/*.js\" \"*.html\" \"styles/*.css\"",
+    "format:check": "prettier --check \"src/**/*.js\" \"*.html\" \"styles/*.css\""
+  },
+  "keywords": [
+    "snake",
+    "game",
+    "babylon.js",
+    "javascript",
+    "es6",
+    "canvas"
+  ],
+  "author": "Jadaru",
+  "license": "MIT",
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "prettier": "^3.2.5",
+    "live-server": "^1.2.2"
+  },
+  "dependencies": {
+    "@babylonjs/core": "^6.30.0"
+  }
+}

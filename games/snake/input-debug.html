@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Input Debug Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .debug-panel {
+            background: #2a2a2a;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .status {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        .controls button {
+            padding: 20px;
+            font-size: 24px;
+            background: #4a4a4a;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .controls button:hover {
+            background: #6a6a6a;
+        }
+        .controls button:active {
+            background: #8a8a8a;
+        }
+        .controls .up { grid-column: 2; grid-row: 1; }
+        .controls .left { grid-column: 1; grid-row: 2; }
+        .controls .right { grid-column: 3; grid-row: 2; }
+        .controls .down { grid-column: 2; grid-row: 3; }
+        #log {
+            background: #000;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="debug-panel">
+        <h1>🐍 Snake Input Debug Test</h1>
+        <div class="status" id="status">Press any key or click buttons below</div>
+        
+        <div class="controls">
+            <button class="up" data-direction="up">▲</button>
+            <button class="left" data-direction="left">◀</button>
+            <button class="right" data-direction="right">▶</button>
+            <button class="down" data-direction="down">▼</button>
+        </div>
+        
+        <button onclick="clearLog()" style="margin: 10px; padding: 10px;">Clear Log</button>
+        <div id="log"></div>
+    </div>
+
+    <script type="module">
+        import { InputHandler } from './src/input.js';
+        
+        const logElement = document.getElementById('log');
+        const statusElement = document.getElementById('status');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}<br>`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        window.clearLog = function() {
+            logElement.innerHTML = '';
+        }
+        
+        // Test InputHandler
+        log('🔧 Initializing InputHandler...');
+        const inputHandler = new InputHandler();
+        
+        // Add callbacks
+        inputHandler.onInput('start', () => {
+            log('🚀 START callback triggered!');
+            statusElement.textContent = 'START pressed!';
+        });
+        
+        inputHandler.onInput('pause', () => {
+            log('⏸️ PAUSE callback triggered!');
+            statusElement.textContent = 'PAUSE pressed!';
+        });
+        
+        // Test direction monitoring
+        setInterval(() => {
+            const direction = inputHandler.getNextDirection();
+            if (direction) {
+                log(`🎯 Direction from queue: (${direction.x}, ${direction.y})`);
+                statusElement.textContent = `Direction: (${direction.x}, ${direction.y})`;
+            }
+        }, 100);
+        
+        // Test keyboard directly
+        document.addEventListener('keydown', (e) => {
+            log(`⌨️ Raw keydown: ${e.code}`);
+        });
+        
+        // Test virtual buttons
+        document.querySelectorAll('.controls button').forEach(button => {
+            button.addEventListener('click', () => {
+                const direction = button.getAttribute('data-direction');
+                log(`🖱️ Virtual button clicked: ${direction}`);
+                
+                // Manually trigger the input handler's virtual button handler
+                inputHandler.handleVirtualButton(button);
+            });
+        });
+        
+        log('✅ Debug test initialized');
+    </script>
+</body>
+</html>

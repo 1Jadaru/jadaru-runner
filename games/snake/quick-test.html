@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Navigation Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #000;
+            color: #fff;
+        }
+        #gameCanvas {
+            border: 2px solid #fff;
+            display: block;
+            margin: 20px auto;
+        }
+        #status {
+            text-align: center;
+            margin: 20px;
+            font-size: 18px;
+        }
+        #controls {
+            text-align: center;
+            margin: 20px;
+        }
+        button {
+            margin: 5px;
+            padding: 10px 15px;
+            font-size: 16px;
+            background: #333;
+            color: #fff;
+            border: 1px solid #666;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <div id="status">
+        <div>Game Status: <span id="gameState">Loading...</span></div>
+        <div>Snake Position: <span id="snakePos">-</span></div>
+        <div>Snake Direction: <span id="snakeDir">-</span></div>
+        <div>Input Queue: <span id="inputQueue">-</span></div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+    <div id="controls">
+        <div>
+            <h3>Test Controls</h3>
+            <button onclick="testDirection(0, -1)">Up ↑</button><br>
+            <button onclick="testDirection(-1, 0)">Left ←</button>
+            <button onclick="testDirection(1, 0)">Right →</button><br>
+            <button onclick="testDirection(0, 1)">Down ↓</button>
+        </div>
+        <div style="margin-top: 20px;">
+            <button onclick="startGame()">Start Game</button>
+            <button onclick="pauseGame()">Pause Game</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    <script type="module">
+        import { Game } from './src/game.js';
+
+        let game;
+        let engine;
+        let scene;
+
+        async function init() {
+            const canvas = document.getElementById('gameCanvas');
+            
+            // Create Babylon.js engine
+            engine = new BABYLON.Engine(canvas, true);
+            
+            // Create scene
+            scene = new BABYLON.Scene(engine);
+            
+            // Setup camera
+            const camera = new BABYLON.UniversalCamera(
+                'camera',
+                new BABYLON.Vector3(0, 300, 0),
+                scene
+            );
+            camera.setTarget(new BABYLON.Vector3(0, 0, 0));
+            camera.fov = Math.PI / 2;
+            scene.activeCamera = camera;
+            camera.inputs.clear();
+
+            // Create game
+            game = new Game(scene);
+            
+            // Start render loop
+            engine.runRenderLoop(() => {
+                scene.render();
+                updateStatus();
+            });
+
+            document.getElementById('gameState').textContent = 'Ready';
+        }
+
+        function updateStatus() {
+            if (game && game.snake) {
+                document.getElementById('gameState').textContent = game.state;
+                
+                const head = game.snake.getHeadPosition();
+                if (head) {
+                    document.getElementById('snakePos').textContent = `(${head.x}, ${head.y})`;
+                }
+                
+                document.getElementById('snakeDir').textContent = 
+                    `(${game.snake.direction.x}, ${game.snake.direction.y})`;
+                
+                if (game.inputHandler && game.inputHandler.directionQueue) {
+                    document.getElementById('inputQueue').textContent = 
+                        game.inputHandler.directionQueue.length;
+                }
+            }
+        }
+
+        window.testDirection = function(x, y) {
+            console.log(`Testing direction: (${x}, ${y})`);
+            if (game && game.inputHandler) {
+                // Add test logging
+                console.log('Before queueDirection - Queue length:', game.inputHandler.directionQueue.length);
+                game.inputHandler.queueDirection({ x, y });
+                console.log('After queueDirection - Queue length:', game.inputHandler.directionQueue.length);
+            }
+        };
+
+        window.startGame = function() {
+            if (game) {
+                game.handleStartInput();
+            }
+        };
+
+        window.pauseGame = function() {
+            if (game) {
+                game.handlePauseInput();
+            }
+        };
+
+        // Initialize
+        init().catch(console.error);
+
+        // Keyboard test
+        document.addEventListener('keydown', (event) => {
+            console.log('Key pressed:', event.code);
+            if (game && game.inputHandler) {
+                game.inputHandler.handleKeyDown(event);
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Input Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #1a1a1a; 
+            color: white; 
+        }
+        .log { 
+            background: #000; 
+            color: #0f0; 
+            padding: 10px; 
+            margin: 10px 0; 
+            height: 300px; 
+            overflow-y: scroll; 
+            font-family: monospace; 
+        }
+        .test-area {
+            border: 2px solid #444;
+            padding: 20px;
+            margin: 10px 0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake Input Test</h1>
+    <div class="test-area">
+        <p>Click here and then test the arrow keys or WASD</p>
+        <p>Focus this area and press keys to test input detection</p>
+    </div>
+    
+    <h3>Input Log:</h3>
+    <div class="log" id="log"></div>
+    
+    <button onclick="clearLog()">Clear Log</button>
+
+    <script type="module">
+        const log = document.getElementById('log');
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            log.innerHTML += `[${timestamp}] ${message}\n`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        function clearLog() {
+            log.innerHTML = '';
+        }
+
+        // Test input handling similar to the game
+        document.addEventListener('keydown', (event) => {
+            addLog(`KeyDown: code=${event.code}, key=${event.key}`);
+            
+            let direction = null;
+            switch (event.code) {
+                case 'ArrowUp':
+                case 'KeyW':
+                    direction = { x: 0, y: -1 };
+                    addLog(`  -> UP direction: (${direction.x}, ${direction.y})`);
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    direction = { x: 0, y: 1 };
+                    addLog(`  -> DOWN direction: (${direction.x}, ${direction.y})`);
+                    break;
+                case 'ArrowLeft':
+                case 'KeyA':
+                    direction = { x: -1, y: 0 };
+                    addLog(`  -> LEFT direction: (${direction.x}, ${direction.y})`);
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    direction = { x: 1, y: 0 };
+                    addLog(`  -> RIGHT direction: (${direction.x}, ${direction.y})`);
+                    break;
+                default:
+                    addLog(`  -> No direction mapping for ${event.code}`);
+            }
+            
+            event.preventDefault();
+        });
+
+        window.clearLog = clearLog;
+        addLog('Input test ready. Press arrow keys or WASD to test.');
+    </script>
+</body>
+</html>

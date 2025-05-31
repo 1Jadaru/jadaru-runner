@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game Debug - Camera View</title>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; background: #f0f0f0; }
+    #canvas { 
+      width: 600px; 
+      height: 600px; 
+      border: 4px solid #333; 
+      margin: 20px auto;
+      display: block;
+      background: #2d3748;
+    }
+    #debug { 
+      position: absolute; 
+      top: 10px; 
+      left: 10px; 
+      background: rgba(0,0,0,0.8); 
+      color: white; 
+      padding: 15px; 
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div id="debug">Debug Info</div>
+  <canvas id="canvas" width="600" height="600"></canvas>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const engine = new BABYLON.Engine(canvas, true, { adaptToDeviceRatio: true });
+    const scene = new BABYLON.Scene(engine);
+    
+    // Create camera positioned high to see entire 400x400 game area
+    const camera = new BABYLON.UniversalCamera('camera', new BABYLON.Vector3(0, 300, 0), scene);
+    camera.setTarget(BABYLON.Vector3.Zero());
+    camera.fov = Math.PI / 2; // 90 degrees
+    
+    // Create ground representing the game area (400x400)
+    const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 400, height: 400 }, scene);
+    const groundMaterial = new BABYLON.StandardMaterial('groundMaterial', scene);
+    groundMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.3);
+    ground.material = groundMaterial;
+    
+    // Create grid lines for reference
+    const gridSize = 20; // cell size
+    const cols = 400 / gridSize; // 20 columns
+    const rows = 400 / gridSize; // 20 rows
+    
+    // Create border lines
+    const borderMaterial = new BABYLON.StandardMaterial('borderMaterial', scene);
+    borderMaterial.diffuseColor = new BABYLON.Color3(1, 1, 1);
+    borderMaterial.emissiveColor = new BABYLON.Color3(0.2, 0.2, 0.2);
+    
+    // Create border boxes
+    const borderPositions = [
+      { x: 0, z: 200 },   // top
+      { x: 0, z: -200 },  // bottom
+      { x: 200, z: 0 },   // right
+      { x: -200, z: 0 }   // left
+    ];
+    
+    borderPositions.forEach((pos, index) => {
+      const border = BABYLON.MeshBuilder.CreateBox(`border_${index}`, 
+        { width: index < 2 ? 400 : 10, height: 5, depth: index < 2 ? 10 : 400 }, scene);
+      border.position.x = pos.x;
+      border.position.z = pos.z;
+      border.position.y = 2.5;
+      border.material = borderMaterial;
+    });
+    
+    // Create test snake segments in center
+    const center = { x: 10, y: 10 }; // grid center (20x20 grid)
+    const snakePositions = [
+      { x: center.x, y: center.y },     // head
+      { x: center.x - 1, y: center.y }, // body
+      { x: center.x - 2, y: center.y }  // tail
+    ];
+    
+    snakePositions.forEach((pos, index) => {
+      const worldX = (pos.x - cols / 2 + 0.5) * gridSize;
+      const worldZ = (pos.y - rows / 2 + 0.5) * gridSize;
+      
+      const segment = BABYLON.MeshBuilder.CreateBox(`snake_${index}`, { size: gridSize * 0.8 }, scene);
+      segment.position.x = worldX;
+      segment.position.z = worldZ;
+      segment.position.y = gridSize * 0.5;
+      
+      const material = new BABYLON.StandardMaterial(`snakeMaterial_${index}`, scene);
+      material.diffuseColor = index === 0 ? 
+        new BABYLON.Color3(0.2, 0.9, 0.2) : // Bright green for head
+        new BABYLON.Color3(0.1, 0.7, 0.1);   // Darker green for body
+      segment.material = material;
+      
+      console.log(`Snake segment ${index} at grid (${pos.x}, ${pos.y}) -> world (${worldX}, ${worldZ})`);
+    });
+    
+    // Add test food
+    const foodWorldX = (15 - cols / 2 + 0.5) * gridSize;
+    const foodWorldZ = (12 - rows / 2 + 0.5) * gridSize;
+    
+    const food = BABYLON.MeshBuilder.CreateSphere('food', { diameter: gridSize * 0.6 }, scene);
+    food.position.x = foodWorldX;
+    food.position.z = foodWorldZ;
+    food.position.y = gridSize * 0.3;
+    
+    const foodMaterial = new BABYLON.StandardMaterial('foodMaterial', scene);
+    foodMaterial.diffuseColor = new BABYLON.Color3(1, 0.2, 0.2);
+    foodMaterial.emissiveColor = new BABYLON.Color3(0.3, 0.05, 0.05);
+    food.material = foodMaterial;
+    
+    // Setup lighting
+    const light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 1, 0), scene);
+    light.intensity = 0.8;
+    
+    // Update debug info
+    const debugDiv = document.getElementById('debug');
+    const updateDebug = () => {
+      debugDiv.innerHTML = `
+        Scene meshes: ${scene.meshes.length}<br>
+        Camera position: (${camera.position.x.toFixed(1)}, ${camera.position.y.toFixed(1)}, ${camera.position.z.toFixed(1)})<br>
+        Camera FOV: ${(camera.fov * 180 / Math.PI).toFixed(1)}°<br>
+        Canvas size: ${canvas.width}x${canvas.height}<br>
+        Ground size: 400x400 units<br>
+        Grid: ${cols}x${rows} cells (${gridSize}px each)<br>
+        <br>
+        <strong>Expected:</strong><br>
+        - Ground visible as blue rectangle<br>
+        - White borders around edge<br>
+        - 3 green cubes (snake) in center<br>
+        - 1 red sphere (food) offset from center
+      `;
+    };
+    
+    updateDebug();
+    
+    // Start render loop
+    engine.runRenderLoop(() => {
+      scene.render();
+    });
+    
+    // Handle resize
+    window.addEventListener('resize', () => {
+      engine.resize();
+      updateDebug();
+    });
+  </script>
+</body>
+</html>

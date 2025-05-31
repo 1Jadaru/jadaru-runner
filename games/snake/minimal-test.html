@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Minimal Snake Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            padding: 20px; 
+            background: #1a1a1a; 
+            color: white; 
+        }
+        canvas {
+            border: 2px solid #444;
+            background: #000;
+        }
+        .controls {
+            margin: 10px 0;
+        }
+        button {
+            margin: 5px;
+            padding: 8px 16px;
+            background: #555;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .debug {
+            background: #222;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Minimal Snake Movement Test</h1>
+    <canvas id="canvas" width="400" height="400"></canvas>
+    
+    <div class="controls">
+        <button onclick="snake.testMove(0, -1)">UP (0, -1)</button>
+        <button onclick="snake.testMove(0, 1)">DOWN (0, 1)</button>
+        <button onclick="snake.testMove(-1, 0)">LEFT (-1, 0)</button>
+        <button onclick="snake.testMove(1, 0)">RIGHT (1, 0)</button>
+        <button onclick="snake.reset()">Reset</button>
+    </div>
+    
+    <div class="debug" id="debug"></div>
+
+    <script>
+        class MinimalSnake {
+            constructor(canvas) {
+                this.canvas = canvas;
+                this.ctx = canvas.getContext('2d');
+                this.gridSize = 20;
+                this.cols = canvas.width / this.gridSize;
+                this.rows = canvas.height / this.gridSize;
+                
+                this.reset();
+                this.draw();
+            }
+            
+            reset() {
+                this.body = [
+                    { x: 10, y: 10 },
+                    { x: 9, y: 10 },
+                    { x: 8, y: 10 }
+                ];
+                this.direction = { x: 1, y: 0 };
+                this.log('Snake reset. Initial body: ' + JSON.stringify(this.body));
+                this.draw();
+            }
+            
+            testMove(dx, dy) {
+                this.log(`\\n=== Testing move direction (${dx}, ${dy}) ===`);
+                this.direction = { x: dx, y: dy };
+                this.move();
+            }
+            
+            move() {
+                const head = this.body[0];
+                this.log(`Current head: (${head.x}, ${head.y}), direction: (${this.direction.x}, ${this.direction.y})`);
+                
+                const newHead = {
+                    x: head.x + this.direction.x,
+                    y: head.y + this.direction.y
+                };
+                
+                this.log(`New head will be: (${newHead.x}, ${newHead.y})`);
+                
+                // Check self collision BEFORE adding new head
+                const collision = this.body.some(segment => 
+                    segment.x === newHead.x && segment.y === newHead.y
+                );
+                
+                if (collision) {
+                    this.log(`COLLISION DETECTED! New head (${newHead.x}, ${newHead.y}) hits existing body`);
+                    return;
+                }
+                
+                // Check bounds
+                if (newHead.x < 0 || newHead.x >= this.cols || newHead.y < 0 || newHead.y >= this.rows) {
+                    this.log(`WALL COLLISION! New head (${newHead.x}, ${newHead.y}) is out of bounds`);
+                    return;
+                }
+                
+                this.body.unshift(newHead);
+                this.body.pop(); // Remove tail
+                
+                this.log(`After move: ${JSON.stringify(this.body)}`);
+                this.draw();
+            }
+            
+            draw() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                // Draw grid
+                this.ctx.strokeStyle = '#333';
+                this.ctx.lineWidth = 1;
+                for (let x = 0; x <= this.canvas.width; x += this.gridSize) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(x, 0);
+                    this.ctx.lineTo(x, this.canvas.height);
+                    this.ctx.stroke();
+                }
+                for (let y = 0; y <= this.canvas.height; y += this.gridSize) {
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, y);
+                    this.ctx.lineTo(this.canvas.width, y);
+                    this.ctx.stroke();
+                }
+                
+                // Draw snake
+                this.body.forEach((segment, index) => {
+                    this.ctx.fillStyle = index === 0 ? '#0f0' : '#090';
+                    this.ctx.fillRect(
+                        segment.x * this.gridSize + 1,
+                        segment.y * this.gridSize + 1,
+                        this.gridSize - 2,
+                        this.gridSize - 2
+                    );
+                    
+                    // Draw coordinates
+                    this.ctx.fillStyle = '#fff';
+                    this.ctx.font = '10px Arial';
+                    this.ctx.fillText(
+                        `${segment.x},${segment.y}`,
+                        segment.x * this.gridSize + 2,
+                        segment.y * this.gridSize + 12
+                    );
+                });
+            }
+            
+            log(message) {
+                const debug = document.getElementById('debug');
+                debug.innerHTML += message + '\\n';
+                debug.scrollTop = debug.scrollHeight;
+                console.log(message);
+            }
+        }
+        
+        const snake = new MinimalSnake(document.getElementById('canvas'));
+        window.snake = snake;
+        
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'ArrowUp':
+                case 'KeyW':
+                    snake.testMove(0, -1);
+                    break;
+                case 'ArrowDown':
+                case 'KeyS':
+                    snake.testMove(0, 1);
+                    break;
+                case 'ArrowLeft':
+                case 'KeyA':
+                    snake.testMove(-1, 0);
+                    break;
+                case 'ArrowRight':
+                case 'KeyD':
+                    snake.testMove(1, 0);
+                    break;
+            }
+            e.preventDefault();
+        });
+    </script>
+</body>
+</html>

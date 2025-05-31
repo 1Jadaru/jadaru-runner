@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+        
+        .console-output {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            height: 400px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake Game Console Test</h1>
+    <div>
+        <button onclick="startTest()">Start Game Test</button>
+        <button onclick="testInput('up')">Test Up</button>
+        <button onclick="testInput('down')">Test Down</button>
+        <button onclick="testInput('left')">Test Left</button>
+        <button onclick="testInput('right')">Test Right</button>
+        <button onclick="clearConsole()">Clear Console</button>
+    </div>
+    
+    <div id="console-output" class="console-output"></div>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    
+    <script>
+        let consoleOutput = document.getElementById('console-output');
+        let game = null;
+        
+        // Override console.log to capture output
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            originalConsoleLog.apply(console, args);
+            consoleOutput.textContent += args.join(' ') + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        // Override console.error too
+        const originalConsoleError = console.error;
+        console.error = function(...args) {
+            originalConsoleError.apply(console, args);
+            consoleOutput.textContent += 'ERROR: ' + args.join(' ') + '\n';
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        };
+        
+        window.clearConsole = function() {
+            consoleOutput.textContent = '';
+        };
+        
+        window.startTest = async function() {
+            try {
+                console.log('🚀 Starting Snake game test...');
+                
+                // Create canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                canvas.style.display = 'none';
+                document.body.appendChild(canvas);
+                
+                // Initialize Babylon.js
+                console.log('🎮 Initializing Babylon.js engine...');
+                const engine = new BABYLON.Engine(canvas, true);
+                const scene = new BABYLON.Scene(engine);
+                
+                // Basic setup
+                const camera = new BABYLON.FreeCamera('camera', new BABYLON.Vector3(0, 10, -10), scene);
+                camera.setTarget(BABYLON.Vector3.Zero());
+                new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 1, 0), scene);
+                
+                console.log('🐍 Creating game instance...');
+                
+                // Import and create game
+                const { Game } = await import('./src/game.js');
+                game = new Game(scene);
+                
+                console.log('✅ Game created successfully');
+                console.log(`🎮 Game state: ${game.state}`);
+                
+                // Start render loop (needed for update to run)
+                engine.runRenderLoop(() => {
+                    scene.render();
+                });
+                
+                console.log('🎯 Game initialization complete. Try pressing Start Game or direction buttons.');
+                
+            } catch (error) {
+                console.error('Failed to initialize game:', error);
+            }
+        };
+        
+        window.testInput = function(direction) {
+            if (!game) {
+                console.log('❌ Game not initialized yet');
+                return;
+            }
+            
+            console.log(`🎮 Testing input: ${direction}`);
+            
+            const directionMap = {
+                'up': 'ArrowUp',
+                'down': 'ArrowDown', 
+                'left': 'ArrowLeft',
+                'right': 'ArrowRight'
+            };
+            
+            const keyCode = directionMap[direction];
+            if (keyCode) {
+                // Simulate keydown event
+                const event = new KeyboardEvent('keydown', {
+                    code: keyCode,
+                    key: keyCode.replace('Arrow', ''),
+                    bubbles: true
+                });
+                document.dispatchEvent(event);
+            }
+        };
+        
+        // Auto-start the test
+        startTest();
+        
+        // Add start game button functionality
+        document.addEventListener('keydown', (event) => {
+            if (event.code === 'Space' && game) {
+                console.log('🚀 SPACE pressed - starting game');
+            }
+        });
+    </script>
+</body>
+</html>

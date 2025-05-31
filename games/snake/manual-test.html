@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Snake Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+        
+        .panel {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .info {
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>Manual Snake Test</h1>
+    
+    <div class="panel">
+        <h2>Game Controls</h2>
+        <button onclick="initGame()">1. Initialize Game</button>
+        <button onclick="startGame()">2. Start Game</button>
+        <button onclick="manualMove()">3. Manual Move</button>
+        <button onclick="checkState()">Check State</button>
+    </div>
+    
+    <div class="panel">
+        <h2>Movement Tests</h2>
+        <button onclick="testDirection('up')">Test Up</button>
+        <button onclick="testDirection('down')">Test Down</button>
+        <button onclick="testDirection('left')">Test Left</button>
+        <button onclick="testDirection('right')">Test Right</button>
+    </div>
+    
+    <div class="panel">
+        <h2>State Info</h2>
+        <div id="state-info" class="info">
+            Click "Check State" to see current game state
+        </div>
+    </div>
+
+    <script src="https://cdn.babylonjs.com/babylon.js"></script>
+    
+    <script type="module">
+        let game = null;
+        
+        // Initialize game
+        window.initGame = async function() {
+            try {
+                console.log('🚀 Initializing game...');
+                
+                // Create hidden canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 800;
+                canvas.height = 600;
+                canvas.style.display = 'none';
+                document.body.appendChild(canvas);
+                
+                // Create Babylon.js engine and scene
+                const engine = new BABYLON.Engine(canvas, true);
+                const scene = new BABYLON.Scene(engine);
+                
+                // Basic setup
+                const camera = new BABYLON.FreeCamera('camera', new BABYLON.Vector3(0, 10, -10), scene);
+                camera.setTarget(BABYLON.Vector3.Zero());
+                new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 1, 0), scene);
+                
+                // Import and create game
+                const { Game } = await import('./src/game.js');
+                game = new Game(scene);
+                
+                // Start render loop
+                engine.runRenderLoop(() => {
+                    scene.render();
+                });
+                
+                console.log('✅ Game initialized');
+                updateStateInfo();
+                
+            } catch (error) {
+                console.error('❌ Failed to initialize:', error);
+            }
+        };
+        
+        // Start game
+        window.startGame = function() {
+            if (!game) {
+                console.log('❌ Game not initialized');
+                return;
+            }
+            
+            console.log('🎮 Starting game...');
+            game.startGame();
+            updateStateInfo();
+        };
+        
+        // Manual move test
+        window.manualMove = function() {
+            if (!game) {
+                console.log('❌ Game not initialized');
+                return;
+            }
+            
+            console.log('🐍 Calling moveSnake() manually...');
+            game.moveSnake();
+            updateStateInfo();
+        };
+        
+        // Test direction
+        window.testDirection = function(direction) {
+            if (!game) {
+                console.log('❌ Game not initialized');
+                return;
+            }
+            
+            const directionMap = {
+                'up': { x: 0, y: -1 },
+                'down': { x: 0, y: 1 },
+                'left': { x: -1, y: 0 },
+                'right': { x: 1, y: 0 }
+            };
+            
+            const dir = directionMap[direction];
+            if (dir) {
+                console.log(`🎯 Testing direction: ${direction} (${dir.x}, ${dir.y})`);
+                game.inputHandler.queueDirection(dir);
+                updateStateInfo();
+            }
+        };
+        
+        // Check current state
+        window.checkState = function() {
+            updateStateInfo();
+        };
+        
+        // Update state info display
+        function updateStateInfo() {
+            if (!game) {
+                document.getElementById('state-info').innerHTML = 'Game not initialized';
+                return;
+            }
+            
+            const info = `
+                <strong>Game State:</strong> ${game.state}<br>
+                <strong>Snake Direction:</strong> (${game.snake?.direction?.x || '?'}, ${game.snake?.direction?.y || '?'})<br>
+                <strong>Snake Body Length:</strong> ${game.snake?.body?.length || '?'}<br>
+                <strong>Input Queue Length:</strong> ${game.inputHandler?.directionQueue?.length || '?'}<br>
+                <strong>Last Input Direction:</strong> (${game.inputHandler?.lastDirection?.x || '?'}, ${game.inputHandler?.lastDirection?.y || '?'})<br>
+                <strong>Move Interval:</strong> ${game.moveInterval}ms<br>
+                <strong>Delta Accumulator:</strong> ${game.deltaTimeAccumulator}ms
+            `;
+            
+            document.getElementById('state-info').innerHTML = info;
+        }
+        
+        // Auto-initialize for convenience
+        setTimeout(() => {
+            initGame();
+        }, 1000);
+    </script>
+</body>
+</html>

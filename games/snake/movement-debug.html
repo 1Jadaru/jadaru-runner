@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Movement Debug</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: #fff;
+        }
+        
+        .debug-panel {
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .status {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+        
+        .controls {
+            margin: 20px 0;
+        }
+        
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        .log {
+            background-color: #000;
+            color: #0f0;
+            padding: 10px;
+            border-radius: 5px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Snake Movement Debug Tool</h1>
+    
+    <div class="debug-panel">
+        <h2>Game State</h2>
+        <div class="status">
+            <strong>State:</strong> <span id="game-state">waiting</span><br>
+            <strong>Snake Direction:</strong> <span id="snake-direction">(1, 0)</span><br>
+            <strong>Input Queue:</strong> <span id="input-queue">[]</span><br>
+            <strong>Last Direction:</strong> <span id="last-direction">(1, 0)</span>
+        </div>
+    </div>
+    
+    <div class="debug-panel">
+        <h2>Controls</h2>
+        <div class="controls">
+            <button onclick="startGame()">Start Game (SPACE)</button>
+            <button onclick="testMove('up')">Move Up</button>
+            <button onclick="testMove('down')">Move Down</button>
+            <button onclick="testMove('left')">Move Left</button>
+            <button onclick="testMove('right')">Move Right</button>
+            <button onclick="clearLog()">Clear Log</button>
+        </div>
+    </div>
+    
+    <div class="debug-panel">
+        <h2>Debug Log</h2>
+        <div id="debug-log" class="log"></div>
+    </div>
+
+    <script type="module">
+        import { Game } from './src/game.js';
+        
+        let game = null;
+        let gameState = 'waiting';
+        
+        // Initialize debug panel
+        function log(message) {
+            const logElement = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            logElement.innerHTML += `[${timestamp}] ${message}\n`;
+            logElement.scrollTop = logElement.scrollHeight;
+        }
+        
+        function updateDisplay() {
+            document.getElementById('game-state').textContent = gameState;
+            
+            if (game && game.snake) {
+                const dir = game.snake.direction;
+                document.getElementById('snake-direction').textContent = `(${dir.x}, ${dir.y})`;
+            }
+            
+            if (game && game.inputHandler) {
+                const queue = game.inputHandler.directionQueue;
+                document.getElementById('input-queue').textContent = JSON.stringify(queue);
+                
+                const lastDir = game.inputHandler.lastDirection;
+                document.getElementById('last-direction').textContent = `(${lastDir.x}, ${lastDir.y})`;
+            }
+        }
+        
+        // Initialize Babylon.js scene
+        async function initBabylon() {
+            const canvas = document.createElement('canvas');
+            canvas.style.display = 'none'; // Hidden for this debug test
+            document.body.appendChild(canvas);
+            
+            const engine = new BABYLON.Engine(canvas, true);
+            const scene = new BABYLON.Scene(engine);
+            
+            // Basic camera setup
+            const camera = new BABYLON.FreeCamera('camera', new BABYLON.Vector3(0, 10, -10), scene);
+            camera.setTarget(BABYLON.Vector3.Zero());
+            
+            // Basic light
+            new BABYLON.HemisphericLight('light', new BABYLON.Vector3(0, 1, 0), scene);
+            
+            return { engine, scene };
+        }
+        
+        // Initialize game
+        async function initGame() {
+            try {
+                log('Initializing Babylon.js...');
+                const { engine, scene } = await initBabylon();
+                
+                log('Creating game instance...');
+                game = new Game(scene);
+                
+                log('Game initialized successfully');
+                updateDisplay();
+                
+                // Monitor game state changes
+                setInterval(() => {
+                    if (game.state !== gameState) {
+                        gameState = game.state;
+                        log(`Game state changed to: ${gameState}`);
+                        updateDisplay();
+                    }
+                }, 100);
+                
+            } catch (error) {
+                log(`Error initializing game: ${error.message}`);
+                console.error(error);
+            }
+        }
+        
+        // Test functions
+        window.startGame = function() {
+            if (game && game.inputHandler) {
+                log('Triggering start input...');
+                game.inputHandler.triggerCallback('start');
+                updateDisplay();
+            } else {
+                log('Game not initialized yet');
+            }
+        };
+        
+        window.testMove = function(direction) {
+            if (!game || !game.inputHandler) {
+                log('Game not initialized yet');
+                return;
+            }
+            
+            const directionMap = {
+                'up': { x: 0, y: -1 },
+                'down': { x: 0, y: 1 },
+                'left': { x: -1, y: 0 },
+                'right': { x: 1, y: 0 }
+            };
+            
+            const dir = directionMap[direction];
+            if (dir) {
+                log(`Testing move: ${direction} (${dir.x}, ${dir.y})`);
+                game.inputHandler.queueDirection(dir);
+                updateDisplay();
+            }
+        };
+        
+        window.clearLog = function() {
+            document.getElementById('debug-log').innerHTML = '';
+        };
+        
+        // Start initialization
+        log('Starting movement debug tool...');
+        initGame();
+    </script>
+</body>
+</html>
