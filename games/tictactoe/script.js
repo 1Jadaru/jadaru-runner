@@ -71,7 +71,11 @@ function createBoard() {
     const cellEl = document.createElement('div');
     cellEl.classList.add('cell');
     cellEl.dataset.index = index;
-    cellEl.textContent = cell ? (cell === 'X' ? '❌' : '⭕') : '';
+    if (cell) {
+      cellEl.textContent = cell === 'X' ? '❌' : '⭕';
+      cellEl.classList.add('placed');
+      cellEl.classList.add(cell.toLowerCase());
+    }
     cellEl.addEventListener('click', handleCellClick);
     boardElement.appendChild(cellEl);
   });
@@ -97,6 +101,7 @@ function makeMove(index, player) {
   const cellEl = boardElement.children[index];
   cellEl.textContent = player === 'X' ? '❌' : '⭕';
   cellEl.classList.add('placed');
+  cellEl.classList.add(player.toLowerCase());
   
   if (soundEnabled) {
     playSound('move');
@@ -156,25 +161,28 @@ function highlightWinner(combo) {
 function handleGameEnd(result) {
   gameActive = false;
   
-  if (result === 'draw') {
-    gameStats.draws++;
-    showGameOverlay('🤝', 'It\'s a Draw!', 'Good game! Try again?');
-  } else {
-    if (result === 'X') {
-      gameStats.xWins++;
-      showGameOverlay('🎉', 'X Wins!', 'Congratulations to Player X!');
+  // Add a small delay to let the winning animation show
+  setTimeout(() => {
+    if (result === 'draw') {
+      gameStats.draws++;
+      showGameOverlay('🤝', 'It\'s a Draw!', 'Good game! Nobody wins this time.');
     } else {
-      gameStats.oWins++;
-      showGameOverlay('🎉', 'O Wins!', 'Congratulations to Player O!');
+      if (result === 'X') {
+        gameStats.xWins++;
+        showGameOverlay('🎉', 'X Wins!', `${gameMode === 'ai' ? 'You win!' : 'Player X wins!'} Great job!`);
+      } else {
+        gameStats.oWins++;
+        showGameOverlay('🎊', 'O Wins!', `${gameMode === 'ai' ? 'Computer wins!' : 'Player O wins!'} Well played!`);
+      }
     }
-  }
-  
-  saveStats();
-  updateStatsDisplay();
-  
-  if (soundEnabled) {
-    playSound(result === 'draw' ? 'draw' : 'win');
-  }
+    
+    saveStats();
+    updateStatsDisplay();
+    
+    if (soundEnabled) {
+      playSound(result === 'draw' ? 'draw' : 'win');
+    }
+  }, 1000); // 1 second delay to show the winning animation
 }
 
 // Show game overlay

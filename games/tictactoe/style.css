@@ -8,12 +8,13 @@
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: flex-start;
   color: #333;
+  overflow: hidden;
 }
 
 /* Enhanced Header Styles */
@@ -112,10 +113,13 @@ body {
   flex-direction: column;
   max-width: 800px;
   width: 100%;
-  padding: 1rem;
+  padding: 0.5rem;
   align-items: center;
-  gap: 2rem;
-  margin-top: 1rem;
+  gap: 1rem;
+  margin-top: 0.5rem;
+  flex: 1;
+  overflow-y: auto;
+  max-height: calc(100vh - 80px);
 }
 
 /* Game Area */
@@ -123,28 +127,28 @@ body {
   width: 100%;
   background: rgba(255, 255, 255, 0.95);
   border-radius: 20px;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   backdrop-filter: blur(10px);
 }
 
 .game-header {
   text-align: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .game-title-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .game-title {
-  font-size: 2.5rem;
+  font-size: 2rem;
   color: #4a5568;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.25rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
   font-weight: 700;
 }
@@ -224,22 +228,22 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  gap: 1rem;
+  margin-bottom: 1rem;
 }
 
 .game-status {
   display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 1rem 2rem;
+  padding: 0.75rem 1.5rem;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .status-text {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: #4a5568;
 }
@@ -248,24 +252,23 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   background: rgba(255, 255, 255, 0.9);
   border-radius: 50%;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
 }
 
 .player-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 /* Game Board */
 .board {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
-  width: 300px;
-  height: 300px;
+  grid-template-columns: repeat(3, 80px);
+  grid-template-rows: repeat(3, 80px);
+  gap: 8px;
   background: rgba(255, 255, 255, 0.1);
   padding: 1rem;
   border-radius: 16px;
@@ -274,13 +277,15 @@ body {
 }
 
 .cell {
+  width: 80px;
+  height: 80px;
   background: rgba(255, 255, 255, 0.95);
   border: 2px solid #4a5568;
   border-radius: 12px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 2.5rem;
+  font-size: 2rem;
   font-weight: 700;
   cursor: pointer;
   user-select: none;
@@ -288,6 +293,8 @@ body {
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   position: relative;
   overflow: hidden;
+  min-width: 80px;
+  min-height: 80px;
 }
 
 .cell:hover {
@@ -305,6 +312,14 @@ body {
 .cell.o {
   color: #ed8936;
   border-color: #ed8936;
+}
+
+.cell.placed {
+  cursor: default;
+}
+
+.cell.placed:hover {
+  transform: none;
 }
 
 .cell.winner {
@@ -346,7 +361,7 @@ body {
   z-index: 10;
 }
 
-.game-overlay.show {
+.game-overlay.active {
   display: flex;
 }
 
@@ -430,7 +445,7 @@ body {
 
 .control-section {
   background: rgba(255, 255, 255, 0.1);
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
@@ -438,16 +453,16 @@ body {
 
 .control-title {
   text-align: center;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   color: #4a5568;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
   font-weight: 700;
 }
 
 .control-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .control-group {
