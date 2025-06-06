@@ -116,7 +116,6 @@ class SnakeGameApp {
     console.log('🐍 Snake game initialized successfully!');
     console.log('Controls: Arrow keys or WASD to move, SPACE to start/pause');
   }
-
   setupWindowHandlers() {
     // Handle window resize
     window.addEventListener('resize', () => {
@@ -147,8 +146,223 @@ class SnakeGameApp {
       this.dispose();
     });
 
+    // Setup enhanced UI handlers
+    this.setupEnhancedUI();
+  }
+  setupEnhancedUI() {
+    // Setup fullscreen functionality
+    this.setupFullscreenToggle();
+    
+    // Setup sound toggle
+    this.setupSoundToggle();
+    
     // Setup virtual controls toggle
     this.setupVirtualControlsToggle();
+    
+    // Setup start game button
+    this.setupStartGameButton();
+    
+    // Setup score animations
+    this.setupScoreAnimations();
+    
+    // Setup keyboard shortcuts
+    this.setupKeyboardShortcuts();
+  }
+
+  setupFullscreenToggle() {
+    const fullscreenBtn = document.getElementById('fullscreen-btn');
+    if (fullscreenBtn) {
+      fullscreenBtn.addEventListener('click', () => {
+        this.toggleFullscreen();
+      });
+      
+      // Update button text based on fullscreen state
+      document.addEventListener('fullscreenchange', () => {
+        const icon = fullscreenBtn.querySelector('.nav-icon');
+        const text = fullscreenBtn.querySelector('.nav-text');
+        if (document.fullscreenElement) {
+          if (icon) icon.textContent = '⛶';
+          if (text) text.textContent = 'Exit Fullscreen';
+        } else {
+          if (icon) icon.textContent = '⛶';
+          if (text) text.textContent = 'Fullscreen';
+        }
+      });
+    }
+  }
+
+  setupSoundToggle() {
+    const soundBtn = document.getElementById('toggle-sound');
+    if (soundBtn) {
+      let soundEnabled = true;
+      
+      soundBtn.addEventListener('click', () => {
+        soundEnabled = !soundEnabled;
+        const icon = soundBtn.querySelector('.btn-icon');
+        const text = soundBtn.querySelector('.btn-text');
+        
+        if (soundEnabled) {
+          soundBtn.classList.remove('muted');
+          if (icon) icon.textContent = '🔊';
+          if (text) text.textContent = 'Sound On';
+        } else {
+          soundBtn.classList.add('muted');
+          if (icon) icon.textContent = '🔇';
+          if (text) text.textContent = 'Sound Off';
+        }
+        
+        // Notify game about sound state change
+        if (this.game && this.game.setSoundEnabled) {
+          this.game.setSoundEnabled(soundEnabled);
+        }
+      });
+    }
+  }
+
+  setupStartGameButton() {
+    const startBtn = document.getElementById('start-game-btn');
+    if (startBtn) {
+      startBtn.addEventListener('click', () => {
+        if (this.game) {
+          if (this.game.state === 'waiting' || this.game.state === 'gameOver') {
+            this.game.startGame();
+          } else if (this.game.state === 'playing') {
+            this.game.pauseGame();
+          } else if (this.game.state === 'paused') {
+            this.game.resumeGame();
+          }
+          
+          // Hide overlay
+          const overlay = document.getElementById('game-overlay');
+          if (overlay) {
+            overlay.classList.add('hidden');
+          }
+        }
+      });
+    }
+  }
+
+  setupScoreAnimations() {
+    // Set up score change observers
+    this.lastScore = 0;
+    this.lastLevel = 1;
+    
+    // Monitor score changes
+    this.scoreUpdateInterval = setInterval(() => {
+      const scoreElement = document.getElementById('score');
+      const levelElement = document.getElementById('level');
+      
+      if (this.game && scoreElement) {
+        const currentScore = this.game.score || 0;
+        if (currentScore !== this.lastScore && currentScore > this.lastScore) {
+          scoreElement.classList.add('score-update');
+          setTimeout(() => {
+            scoreElement.classList.remove('score-update');
+          }, 400);
+          this.lastScore = currentScore;
+        }
+      }
+      
+      if (this.game && levelElement) {
+        const currentLevel = this.game.level || 1;
+        if (currentLevel !== this.lastLevel && currentLevel > this.lastLevel) {
+          levelElement.classList.add('level-up');
+          setTimeout(() => {
+            levelElement.classList.remove('level-up');
+          }, 600);
+          this.lastLevel = currentLevel;
+        }
+      }
+    }, 100);
+  }
+
+  setupKeyboardShortcuts() {
+    document.addEventListener('keydown', (event) => {
+      switch (event.code) {
+        case 'Escape':
+          event.preventDefault();
+          this.showGameMenu();
+          break;
+        case 'F11':
+          event.preventDefault();
+          this.toggleFullscreen();
+          break;
+        case 'KeyM':
+          event.preventDefault();
+          this.toggleSound();
+          break;
+      }
+    });
+  }
+
+  toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(err => {
+        console.log(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  }
+
+  toggleSound() {
+    const soundBtn = document.getElementById('toggle-sound');
+    if (soundBtn) {
+      soundBtn.click();
+    }
+  }
+
+  showGameMenu() {
+    const overlay = document.getElementById('game-overlay');
+    const messageElement = document.getElementById('game-message');
+    
+    if (overlay && messageElement) {
+      const isPaused = this.game && this.game.state === 'playing';
+      
+      if (isPaused) {
+        this.game.pauseGame();
+      }
+      
+      messageElement.innerHTML = `
+        <div class="message-icon">⚙️</div>
+        <h2>Game Menu</h2>
+        <div class="menu-options">
+          <button class="menu-btn" onclick="window.snakeGame.resumeGame()">
+            <span class="btn-icon">▶️</span>
+            <span>Resume Game</span>
+          </button>
+          <button class="menu-btn" onclick="window.snakeGame.restartGame()">
+            <span class="btn-icon">🔄</span>
+            <span>Restart Game</span>
+          </button>
+          <button class="menu-btn" onclick="window.location.href='/'">
+            <span class="btn-icon">🏠</span>
+            <span>Main Menu</span>
+          </button>
+        </div>
+      `;
+      overlay.classList.remove('hidden');
+    }
+  }
+
+  resumeGame() {
+    if (this.game && this.game.state === 'paused') {
+      this.game.resumeGame();
+    }
+    const overlay = document.getElementById('game-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+    }
+  }
+  restartGame() {
+    if (this.game) {
+      this.game.resetGame();
+      this.game.startGame();
+    }
+    const overlay = document.getElementById('game-overlay');
+    if (overlay) {
+      overlay.classList.add('hidden');
+    }
   }
 
   setupVirtualControlsToggle() {
@@ -163,20 +377,31 @@ class SnakeGameApp {
       // Auto-show on touch devices or small screens
       if (isTouchDevice || isSmallScreen) {
         mobileControls.style.display = 'flex';
-        toggleButton.textContent = 'Hide Virtual Controls';
+        const icon = toggleButton.querySelector('.btn-icon');
+        const text = toggleButton.querySelector('.btn-text');
+        if (icon) icon.textContent = '📱';
+        if (text) text.textContent = 'Hide Virtual Controls';
       } else {
         mobileControls.style.display = 'none';
-        toggleButton.textContent = 'Show Virtual Controls';
+        const icon = toggleButton.querySelector('.btn-icon');
+        const text = toggleButton.querySelector('.btn-text');
+        if (icon) icon.textContent = '📱';
+        if (text) text.textContent = 'Show Virtual Controls';
       }
       
       toggleButton.addEventListener('click', () => {
         const isVisible = mobileControls.style.display === 'flex';
+        const icon = toggleButton.querySelector('.btn-icon');
+        const text = toggleButton.querySelector('.btn-text');
+        
         if (isVisible) {
           mobileControls.style.display = 'none';
-          toggleButton.textContent = 'Show Virtual Controls';
+          if (icon) icon.textContent = '📱';
+          if (text) text.textContent = 'Show Virtual Controls';
         } else {
           mobileControls.style.display = 'flex';
-          toggleButton.textContent = 'Hide Virtual Controls';
+          if (icon) icon.textContent = '📱';
+          if (text) text.textContent = 'Hide Virtual Controls';
         }
       });
     }
@@ -217,11 +442,15 @@ class SnakeGameApp {
     }
     return null;
   }
-
   /**
    * Dispose of all resources
    */
   dispose() {
+    // Clear intervals
+    if (this.scoreUpdateInterval) {
+      clearInterval(this.scoreUpdateInterval);
+    }
+    
     if (this.game) {
       this.game.dispose();
     }

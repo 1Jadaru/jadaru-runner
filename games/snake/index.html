@@ -8,39 +8,112 @@
   <link rel="stylesheet" href="/css/style.css">
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
-<body>
-  <header class="site-header">
+<body>  <header class="site-header">
     <div class="container">
-      <h1 class="logo">Jadaru</h1>
-      <nav class="main-nav">
-        <a href="/" class="btn">&#8592; Back to Main Page</a>
-      </nav>
+      <div class="header-content">
+        <div class="logo-section">
+          <h1 class="logo">🐍 Jadaru Snake</h1>
+          <span class="game-version">v2.0</span>
+        </div>
+        <nav class="main-nav">
+          <a href="/" class="nav-btn home-btn">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-text">Home</span>
+          </a>
+          <a href="/games/runner/" class="nav-btn">
+            <span class="nav-icon">🏃</span>
+            <span class="nav-text">Runner</span>
+          </a>
+          <button id="fullscreen-btn" class="nav-btn action-btn">
+            <span class="nav-icon">⛶</span>
+            <span class="nav-text">Fullscreen</span>
+          </button>
+        </nav>
+      </div>
     </div>
   </header>
   <div class="game-container">
-    <div class="game-area">
-      <div class="game-header">
-        <h1>🐍 Snake Game</h1>
-        <div class="game-info">
-          <div class="score">Score: <span id="score">0</span></div>
-          <div class="high-score">High Score: <span id="high-score">0</span></div>
+    <div class="game-area">      <div class="game-header">
+        <div class="game-title-section">
+          <h1 class="game-title">🐍 Snake Game</h1>
+          <p class="game-subtitle">Grow your snake and beat your high score!</p>
+        </div>
+        <div class="game-stats">
+          <div class="stat-card score-card">
+            <div class="stat-label">Score</div>
+            <div class="stat-value" id="score">0</div>
+          </div>
+          <div class="stat-card high-score-card">
+            <div class="stat-label">Best</div>
+            <div class="stat-value" id="high-score">0</div>
+          </div>
+          <div class="stat-card level-card">
+            <div class="stat-label">Level</div>
+            <div class="stat-value" id="level">1</div>
+          </div>
         </div>
       </div>
       
       <div class="canvas-container">
-        <canvas id="game-canvas" width="600" height="600"></canvas>
-        <div class="game-overlay" id="game-overlay">
+        <canvas id="game-canvas" width="600" height="600"></canvas>        <div class="game-overlay" id="game-overlay">
           <div class="game-message" id="game-message">
-            <h2>Press SPACE to Start</h2>
-            <p>Use arrow keys or WASD to control the snake</p>
+            <div class="message-icon">🎮</div>
+            <h2>Ready to Play?</h2>
+            <p>Use <kbd>Arrow Keys</kbd> or <kbd>WASD</kbd> to control your snake</p>
+            <div class="game-instructions">
+              <div class="instruction-item">
+                <kbd>SPACE</kbd> <span>Start/Restart Game</span>
+              </div>
+              <div class="instruction-item">
+                <kbd>P</kbd> <span>Pause/Resume</span>
+              </div>
+              <div class="instruction-item">
+                <kbd>ESC</kbd> <span>Menu</span>
+              </div>
+            </div>
+            <button class="start-game-btn" id="start-game-btn">
+              <span class="btn-icon">🚀</span>
+              <span>Start Game</span>
+            </button>
           </div>
         </div>
       </div>      <div class="controls">
-        <div class="control-info">
-          <p><strong>Controls:</strong> Arrow Keys or WASD</p>
-          <p><strong>Start/Restart:</strong> SPACE</p>
-          <p><strong>Pause:</strong> P</p>
-          <button id="toggle-virtual-controls" class="toggle-controls-btn">Show Virtual Controls</button>
+        <div class="control-section">
+          <h3 class="control-title">🎮 Game Controls</h3>
+          <div class="control-grid">
+            <div class="control-group">
+              <h4>Movement</h4>
+              <div class="control-keys">
+                <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
+                <span class="control-or">or</span>
+                <kbd>W</kbd><kbd>S</kbd><kbd>A</kbd><kbd>D</kbd>
+              </div>
+            </div>
+            <div class="control-group">
+              <h4>Actions</h4>
+              <div class="control-actions">
+                <div class="control-item">
+                  <kbd>SPACE</kbd> <span>Start/Restart</span>
+                </div>
+                <div class="control-item">
+                  <kbd>P</kbd> <span>Pause/Resume</span>
+                </div>
+                <div class="control-item">
+                  <kbd>ESC</kbd> <span>Game Menu</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="control-options">
+            <button id="toggle-virtual-controls" class="toggle-controls-btn">
+              <span class="btn-icon">📱</span>
+              <span class="btn-text">Show Virtual Controls</span>
+            </button>
+            <button id="toggle-sound" class="toggle-sound-btn">
+              <span class="btn-icon">🔊</span>
+              <span class="btn-text">Sound On</span>
+            </button>
+          </div>
         </div>
       </div>
 
