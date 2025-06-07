@@ -1,0 +1,33 @@
+# Git & GitHub
+.git*
+.github/
+
+# VS Code config
+.vscode/
+
+# Cursor or other local tooling config
+.cursor/
+.idea/
+*.code-workspace
+
+# Node / package manager folders
+node_modules/
+package.json
+package-lock.json
+yarn.lock
+
+# Windows & macOS system files
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
+
+# Dev environment or temp files
+.env
+*.tmp
+*.bak
+
+# Documentation
+README.md
+LICENSE
