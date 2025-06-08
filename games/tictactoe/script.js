@@ -306,7 +306,6 @@ function setupEventListeners() {
   resetButton.addEventListener('click', resetGame);
   clearStatsButton.addEventListener('click', clearStats);
   toggleSoundButton.addEventListener('click', toggleSound);
-  fullscreenButton.addEventListener('click', toggleFullscreen);
   playAgainButton.addEventListener('click', resetGame);
   newGameButton.addEventListener('click', resetGame);
   
@@ -455,39 +454,15 @@ function handleCellTouch(e, index) {
     e.target.dataset.touching = 'false';
   }, 200);
   
-  // Make the move
-  makeMove(index);
+  // Delegate to the standard click handler
+  handleCellClick(e);
 }
 
 // Improved mobile event listeners
 function setupMobileEventListeners() {
-  // Enhanced cell interaction for mobile
-  boardElement.addEventListener('touchend', function(e) {
-    if (e.target.classList.contains('cell') && gameActive) {
-      const index = parseInt(e.target.dataset.index);
-      if (board[index] === null) {
-        handleCellTouch(e, index);
-      }
-    }
-  }, { passive: false });
-  
-  // Fallback click events for desktop/hybrid devices
-  boardElement.addEventListener('click', function(e) {
-    if (!isTouch && e.target.classList.contains('cell') && gameActive) {
-      const index = parseInt(e.target.dataset.index);
-      if (board[index] === null) {
-        makeMove(index);
-      }
-    }
-  });
-  
-  // Enhanced fullscreen for mobile
+  // Enhanced fullscreen for both mobile and desktop
   if (fullscreenButton) {
     fullscreenButton.addEventListener('click', toggleFullscreen);
-    fullscreenButton.addEventListener('touchend', function(e) {
-      e.preventDefault();
-      toggleFullscreen();
-    });
   }
 }
 
