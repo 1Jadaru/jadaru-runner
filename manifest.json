@@ -1,0 +1,69 @@
+{
+  "name": "Jadaru - Modern Web Games & SaaS Tools",
+  "short_name": "Jadaru",
+  "description": "Discover premium web games and powerful micro SaaS tools. Play 3D physics games, classic arcade games, and access productivity utilities all in one modern platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121212",
+  "theme_color": "#00C853",
+  "orientation": "portrait-primary",
+  "categories": ["games", "productivity", "entertainment"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon",
+      "form_factor": "narrow"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Play Snake Game",
+      "short_name": "Snake",
+      "description": "Classic Snake game in 3D",
+      "url": "/games/snake/",
+      "icons": [
+        {
+          "src": "/favicon.ico",
+          "sizes": "32x32"
+        }
+      ]
+    },
+    {
+      "name": "Play Tic Tac Toe",
+      "short_name": "Tic Tac Toe",
+      "description": "Classic strategy game",
+      "url": "/games/tictactoe/",
+      "icons": [
+        {
+          "src": "/favicon.ico",
+          "sizes": "32x32"
+        }
+      ]
+    },
+    {
+      "name": "Play Runner Game",
+      "short_name": "Runner",
+      "description": "Endless runner adventure",
+      "url": "/games/runner-refactored/",
+      "icons": [
+        {
+          "src": "/favicon.ico",
+          "sizes": "32x32"
+        }
+      ]
+    }
+  ],
+  "prefer_related_applications": false
+}

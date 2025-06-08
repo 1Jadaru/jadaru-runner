@@ -1,85 +1,212 @@
-<!-- Test deploy at 2025-06-07 2 -->
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  <title>Jadaru</title>
+<html lang="en" prefix="og: https://ogp.me/ns#">
+<head>  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#121212" />
+  <meta name="msapplication-navbutton-color" content="#121212" />
+  <meta name="apple-mobile-web-app-title" content="Jadaru" />
+  
+  <!-- Primary Meta Tags -->
+  <title>Jadaru - Modern Web Games & SaaS Tools Platform</title>
+  <meta name="title" content="Jadaru - Modern Web Games & SaaS Tools Platform" />
+  <meta name="description" content="Discover premium web games and powerful micro SaaS tools. Play 3D physics games, classic arcade games, and access productivity utilities all in one modern platform." />
+  <meta name="keywords" content="web games, browser games, SaaS tools, 3D games, snake game, tic tac toe, runner game, physics simulation, productivity tools" />
+  <meta name="author" content="Jadaru" />
+  <meta name="robots" content="index, follow" />
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://jadaru.co/" />
+  <meta property="og:title" content="Jadaru - Modern Web Games & SaaS Tools Platform" />
+  <meta property="og:description" content="Discover premium web games and powerful micro SaaS tools. Play 3D physics games, classic arcade games, and access productivity utilities all in one modern platform." />
+  <meta property="og:image" content="https://jadaru.co/favicon.ico" />
+  <meta property="og:site_name" content="Jadaru" />
+  
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://jadaru.co/" />
+  <meta property="twitter:title" content="Jadaru - Modern Web Games & SaaS Tools Platform" />
+  <meta property="twitter:description" content="Discover premium web games and powerful micro SaaS tools. Play 3D physics games, classic arcade games, and access productivity utilities all in one modern platform." />
+  <meta property="twitter:image" content="https://jadaru.co/favicon.ico" />
+    <!-- Favicon and Icons -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" href="/favicon.ico">
+  <link rel="manifest" href="/manifest.json">
+  
+  <!-- Performance and Mobile Optimization -->
+  <link rel="dns-prefetch" href="//www.googletagmanager.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  
+  <!-- Preload Critical Resources -->
+  <link rel="preload" href="css/style.css" as="style">
   <link rel="stylesheet" href="css/style.css" />
+  
+  <!-- AdSense Meta Tags -->
+  <meta name="google-adsense-account" content="ca-pub-XXXXXXXXXXXXXXXXX">
+  <meta name="ads-by-google" content="true">
+  
+  <!-- Structured Data -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Jadaru",
+    "url": "https://jadaru.co",
+    "description": "Modern web games and SaaS tools platform",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "https://jadaru.co/search?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+  
   <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WSS4ZGFN9L"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-
-      gtag('config', 'G-WSS4ZGFN9L');
-    </script>
-</head>
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-WSS4ZGFN9L"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    
+    gtag('config', 'G-WSS4ZGFN9L');
+  </script>
 <body>
-  <header class="site-header">
+  <!-- Skip Navigation Link for Accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  
+  <header class="site-header" role="banner">
     <div class="container">
-      <h1 class="logo">Jadaru</h1>
-      <nav class="main-nav">
-        <a href="#tools">Tools</a>
-        <a href="#games">Games</a>
-        <a href="#contact">Contact</a>
-      </nav>
+      <div class="header-flex">
+        <h1 class="logo">
+          <a href="/" aria-label="Jadaru Homepage">Jadaru</a>
+        </h1>
+        <nav class="main-nav" role="navigation" aria-label="Main navigation">
+          <a href="#tools" aria-describedby="tools-desc">Tools</a>
+          <a href="#games" aria-describedby="games-desc">Games</a>
+          <a href="#contact" aria-describedby="contact-desc">Contact</a>
+        </nav>
+      </div>
     </div>
   </header>
 
-  <main>
-    <section class="hero">
+  <main id="main-content" role="main">
+    <!-- AdSense Ad Space - Top Banner -->
+    <div class="ad-container ad-top" aria-label="Advertisement">
+      <!-- AdSense code will be inserted here -->
+      <div class="ad-placeholder">Advertisement</div>
+    </div>
+    
+    <section class="hero" aria-labelledby="hero-title">
       <div class="container">
-        <h2>Simple Tools. Smarter Play.</h2>
-        <p>Jadaru is a dual-purpose platform for micro SaaS utilities and fun browser-based games.</p>
+        <h2 id="hero-title">Simple Tools. Smarter Play.</h2>
+        <p class="hero-subtitle">Jadaru is a dual-purpose platform offering innovative micro SaaS utilities and engaging browser-based games for productivity and entertainment.</p>
         <div class="cta-buttons">
-          <a href="#tools" class="btn">Explore Tools</a>
-          <a href="#games" class="btn secondary">Play Games</a>
+          <a href="#tools" class="btn btn-primary" role="button">
+            <span class="btn-icon">🛠️</span>
+            Explore Tools
+          </a>
+          <a href="#games" class="btn btn-secondary" role="button">
+            <span class="btn-icon">🎮</span>
+            Play Games
+          </a>
         </div>
       </div>
     </section>
 
-    <section id="tools" class="placeholder-section">
+    <section id="tools" class="tools-section" aria-labelledby="tools-title">
       <div class="container">
-        <h3>Micro SaaS Tools</h3>
-        <p>Coming soon: powerful yet minimal tools to help automate and enhance your day.</p>
+        <h3 id="tools-title">Micro SaaS Tools</h3>
+        <p id="tools-desc">Powerful yet minimal tools designed to automate and enhance your daily workflow.</p>
+        
+        <!-- AdSense Ad Space - Mid Content -->
+        <div class="ad-container ad-mid" aria-label="Advertisement">
+          <div class="ad-placeholder">Advertisement</div>
+        </div>
+        
+        <div class="tools-grid">
+          <div class="tool-card coming-soon">
+            <div class="card-icon">⚡</div>
+            <h4>Productivity Suite</h4>
+            <p>Coming soon: Advanced task management and automation tools.</p>
+            <span class="status-badge">Coming Soon</span>
+          </div>
+          <div class="tool-card coming-soon">
+            <div class="card-icon">📊</div>
+            <h4>Analytics Dashboard</h4>
+            <p>Coming soon: Real-time data visualization and insights.</p>
+            <span class="status-badge">Coming Soon</span>
+          </div>
+          <div class="tool-card coming-soon">
+            <div class="card-icon">🔧</div>
+            <h4>Developer Utilities</h4>
+            <p>Coming soon: Essential tools for modern web development.</p>
+            <span class="status-badge">Coming Soon</span>
+          </div>
+        </div>
       </div>
-    </section>    <section id="games" class="placeholder-section">
+    </section>    <section id="games" class="games-section" aria-labelledby="games-title">
       <div class="container">
-        <h3>Mini Games Hub</h3>
-        <p>Jump into casual games built for fun — and powered by AdSense.</p>
+        <h3 id="games-title">Premium Games Hub</h3>
+        <p id="games-desc">Immerse yourself in high-quality browser games featuring cutting-edge graphics and smooth gameplay.</p>
         
         <div class="games-grid">
-          <div class="game-card">
-            <h4>3D Physics Cube</h4>
-            <p>Experience realistic 3D physics with an interactive cube. Control movement forces in real-time using intuitive controls and keyboard shortcuts.</p>
+          <article class="game-card featured" itemscope itemtype="https://schema.org/Game">
+            <div class="card-header">
+              <div class="game-icon">🎲</div>
+              <div class="game-meta">
+                <h4 itemprop="name">3D Physics Cube</h4>
+                <span class="game-rating">⭐⭐⭐⭐⭐</span>
+              </div>
+            </div>
+            <p itemprop="description">Experience realistic 3D physics with an interactive cube. Control movement forces in real-time using intuitive controls and keyboard shortcuts.</p>
             <div class="game-features">
               <span class="feature-tag">🎮 Interactive Controls</span>
               <span class="feature-tag">⚡ Physics Engine</span>
               <span class="feature-tag">🎯 Force Adjustment</span>
             </div>
             <div class="game-buttons">
-              <a href="/games/devstral/babylon-improved.html" class="btn">Play Enhanced Version</a>
-              <a href="/games/devstral/babylon-fixed.html" class="btn secondary">Play Standard Version</a>
+              <a href="/games/devstral/babylon-improved.html" class="btn btn-primary" itemprop="url">
+                Play Enhanced Version
+              </a>
+              <a href="/games/devstral/babylon-fixed.html" class="btn btn-secondary">
+                Play Standard Version
+              </a>
             </div>
-          </div>
-            <div class="game-card">
-            <h4>Runner Game</h4>
-            <p>Classic endless runner gameplay with smooth controls and challenging obstacles. Test your reflexes in this fast-paced adventure.</p>
+          </article>
+
+          <article class="game-card" itemscope itemtype="https://schema.org/Game">
+            <div class="card-header">
+              <div class="game-icon">🏃</div>
+              <div class="game-meta">
+                <h4 itemprop="name">Runner Game</h4>
+                <span class="game-rating">⭐⭐⭐⭐</span>
+              </div>
+            </div>
+            <p itemprop="description">Classic endless runner gameplay with smooth controls and challenging obstacles. Test your reflexes in this fast-paced adventure.</p>
             <div class="game-features">
               <span class="feature-tag">🏃 Endless Runner</span>
               <span class="feature-tag">⭐ High Scores</span>
               <span class="feature-tag">🎨 Smooth Graphics</span>
             </div>
             <div class="game-buttons">
-              <a href="/games/runner/" class="btn secondary">Play Classic</a>
-              <a href="/games/runner-refactored/" class="btn">Play Enhanced</a>
+              <a href="/games/runner/" class="btn btn-secondary" itemprop="url">Play Classic</a>
+              <a href="/games/runner-refactored/" class="btn btn-primary">Play Enhanced</a>
             </div>
-          </div>
-            <div class="game-card">
-            <h4>Runner Game - Refactored</h4>
-            <p>Enhanced endless runner with modern ES6+ architecture, 60+ FPS performance, mobile touch controls, and immersive audio effects. Experience the next generation of web gaming.</p>
+          </article>
+
+          <article class="game-card premium" itemscope itemtype="https://schema.org/Game">
+            <div class="card-header">
+              <div class="game-icon">🚀</div>
+              <div class="game-meta">
+                <h4 itemprop="name">Runner Game - Refactored</h4>
+                <span class="game-rating">⭐⭐⭐⭐⭐</span>
+                <span class="premium-badge">Premium</span>
+              </div>
+            </div>
+            <p itemprop="description">Enhanced endless runner with modern ES6+ architecture, 60+ FPS performance, mobile touch controls, and immersive audio effects.</p>
             <div class="game-features">
               <span class="feature-tag">🚀 60+ FPS Performance</span>
               <span class="feature-tag">📱 Mobile Optimized</span>
@@ -89,14 +216,24 @@
               <span class="feature-tag">✨ Visual Effects</span>
             </div>
             <div class="game-buttons">
-              <a href="/games/runner-refactored/" class="btn">Play Enhanced Version</a>
-              <a href="/games/runner-refactored/comparison.html" class="btn secondary">View Comparison</a>
+              <a href="/games/runner-refactored/" class="btn btn-primary" itemprop="url">
+                Play Enhanced Version
+              </a>
+              <a href="/games/runner-refactored/comparison.html" class="btn btn-secondary">
+                View Comparison
+              </a>
             </div>
-          </div>
+          </article>
           
-          <div class="game-card">
-            <h4>🐍 Snake Game</h4>
-            <p>Classic Snake game reimagined with stunning 3D graphics powered by Babylon.js. Enjoy smooth gameplay, particle effects, and responsive controls on desktop and mobile devices.</p>
+          <article class="game-card" itemscope itemtype="https://schema.org/Game">
+            <div class="card-header">
+              <div class="game-icon">🐍</div>
+              <div class="game-meta">
+                <h4 itemprop="name">Snake Game 3D</h4>
+                <span class="game-rating">⭐⭐⭐⭐⭐</span>
+              </div>
+            </div>
+            <p itemprop="description">Classic Snake game reimagined with stunning 3D graphics powered by Babylon.js. Enjoy smooth gameplay, particle effects, and responsive controls.</p>
             <div class="game-features">
               <span class="feature-tag">🎮 Classic Gameplay</span>
               <span class="feature-tag">🎨 3D Graphics</span>
@@ -106,34 +243,176 @@
               <span class="feature-tag">⚡ Babylon.js Engine</span>
             </div>
             <div class="game-buttons">
-              <a href="/games/snake/" class="btn">Play Snake Game</a>
+              <a href="/games/snake/" class="btn btn-primary" itemprop="url">Play Snake Game</a>
             </div>
-          </div>
-  <div class="game-card">
-    <h4>❌⭕ Tic Tac Toe</h4>
-    <p>A simple yet polished Tic Tac Toe game. Play against a friend on any device.</p>
-    <div class="game-features">
-      <span class="feature-tag">📱 Mobile Friendly</span>
-      <span class="feature-tag">🎨 Dark Theme</span>
-      <span class="feature-tag">🤝 Two Player</span>
-    </div>
-    <div class="game-buttons">
-      <a href="/games/tictactoe/" class="btn">Play Tic Tac Toe</a>
-    </div>
-  </div>
+          </article>
+
+          <article class="game-card" itemscope itemtype="https://schema.org/Game">
+            <div class="card-header">
+              <div class="game-icon">⭕</div>
+              <div class="game-meta">
+                <h4 itemprop="name">Tic Tac Toe</h4>
+                <span class="game-rating">⭐⭐⭐⭐</span>
+              </div>
+            </div>
+            <p itemprop="description">A beautifully crafted Tic Tac Toe game with modern dark theme design. Perfect for quick matches with friends on any device.</p>
+            <div class="game-features">
+              <span class="feature-tag">📱 Mobile Friendly</span>
+              <span class="feature-tag">🎨 Dark Theme</span>
+              <span class="feature-tag">🤝 Two Player</span>
+              <span class="feature-tag">📊 Game Statistics</span>
+            </div>
+            <div class="game-buttons">
+              <a href="/games/tictactoe/" class="btn btn-primary" itemprop="url">Play Tic Tac Toe</a>
+            </div>
+          </article>
+        </div>
+        
+        <!-- AdSense Ad Space - Bottom Content -->
+        <div class="ad-container ad-bottom" aria-label="Advertisement">
+          <div class="ad-placeholder">Advertisement</div>
         </div>
       </div>
     </section>
-  </main>
-  <footer class="site-footer" id="contact">
+  </main>  
+  <footer class="site-footer" id="contact" role="contentinfo">
     <div class="container">
-      <p>&copy; 2025 Jadaru. All rights reserved.</p>
-      <p>
-        <a href="/privacy-policy.html">Privacy Policy</a> | 
-        <a href="/terms-conditions.html">Terms & Conditions</a> | 
-        Email: contact@jadaru.co
-      </p>
+      <div class="footer-content">
+        <div class="footer-section">
+          <h4>Jadaru</h4>
+          <p>Modern web games and productivity tools for the digital age.</p>
+          <div class="social-links">
+            <a href="#" aria-label="Follow us on Twitter" rel="noopener">🐦</a>
+            <a href="#" aria-label="Follow us on LinkedIn" rel="noopener">💼</a>
+            <a href="#" aria-label="Follow us on GitHub" rel="noopener">💻</a>
+          </div>
+        </div>
+        
+        <div class="footer-section">
+          <h4>Quick Links</h4>
+          <ul>
+            <li><a href="#games">Games</a></li>
+            <li><a href="#tools">Tools</a></li>
+            <li><a href="/privacy-policy.html">Privacy Policy</a></li>
+            <li><a href="/terms-conditions.html">Terms & Conditions</a></li>
+          </ul>
+        </div>
+        
+        <div class="footer-section">
+          <h4 id="contact-desc">Contact</h4>
+          <p>
+            <strong>Email:</strong> 
+            <a href="mailto:contact@jadaru.co">contact@jadaru.co</a>
+          </p>
+          <p>
+            <strong>Business Inquiries:</strong> 
+            <a href="mailto:business@jadaru.co">business@jadaru.co</a>
+          </p>
+        </div>
+      </div>
+      
+      <div class="footer-bottom">
+        <p>&copy; 2025 Jadaru. All rights reserved.</p>
+        <p class="disclaimer">
+          This site is optimized for modern browsers and may contain advertisements.
+        </p>
+      </div>
     </div>
   </footer>
+    <!-- Performance and Analytics Scripts -->
+  <script>
+    // Enhanced mobile touch handling
+    document.addEventListener('DOMContentLoaded', () => {
+      // Prevent double-tap zoom on buttons
+      const buttons = document.querySelectorAll('.btn, .game-buttons a, .main-nav a');
+      buttons.forEach(button => {
+        button.addEventListener('touchend', (e) => {
+          e.preventDefault();
+          button.click();
+        }, { passive: false });
+      });
+      
+      // Enhanced touch feedback
+      const touchElements = document.querySelectorAll('.game-card, .tool-card, .btn');
+      touchElements.forEach(element => {
+        element.addEventListener('touchstart', () => {
+          element.style.transform = 'scale(0.98)';
+        }, { passive: true });
+        
+        element.addEventListener('touchend', () => {
+          element.style.transform = 'scale(1)';
+        }, { passive: true });
+      });
+    });
+    
+    // Lazy loading for images
+    if ('IntersectionObserver' in window) {
+      const imageObserver = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const img = entry.target;
+            img.src = img.dataset.src;
+            img.classList.remove('lazy');
+            imageObserver.unobserve(img);
+          }
+        });
+      });
+      
+      document.querySelectorAll('img[data-src]').forEach(img => {
+        imageObserver.observe(img);
+      });
+    }
+    
+    // Enhanced smooth scrolling for mobile
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+          
+          // Add focus for keyboard navigation
+          target.focus();
+        }
+      });
+    });
+    
+    // Mobile-specific performance monitoring
+    window.addEventListener('load', () => {
+      if ('performance' in window) {
+        const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+        const isMobile = window.innerWidth <= 768;
+        
+        gtag('event', 'page_load_time', {
+          'value': loadTime,
+          'custom_parameter': 'homepage',
+          'device_type': isMobile ? 'mobile' : 'desktop'
+        });
+      }
+      
+      // Register service worker for PWA capabilities
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {
+          // Service worker registration failed, continue without it
+        });
+      }
+    });
+    
+    // Handle orientation changes on mobile
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        window.scrollTo(0, 1);
+      }, 100);
+    });
+    
+    // Optimize for mobile viewport
+    const viewport = document.querySelector('meta[name="viewport"]');
+    if (viewport && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      viewport.setAttribute('content', 'width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no');
+    }
+  </script>
 </body>
 </html>

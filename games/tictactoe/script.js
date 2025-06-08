@@ -42,6 +42,9 @@ function initGame() {
   createBoard();
   updatePlayerIndicator();
   setupEventListeners();
+  
+  // Initialize mobile-specific features
+  initMobileGame();
 }
 
 // Load statistics from localStorage
@@ -317,6 +320,223 @@ function setupEventListeners() {
     soundEnabled = JSON.parse(savedSound);
     toggleSound();
     toggleSound(); // Double toggle to set correct state
+  }
+}
+
+// Mobile-specific enhancements
+let isMobile = /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+let isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+let lastTouchTime = 0;
+
+// Enhanced mobile initialization
+function initMobileFeatures() {
+  // Prevent zoom on double-tap
+  document.addEventListener('touchend', function(e) {
+    const now = Date.now();
+    if (now - lastTouchTime <= 300) {
+      e.preventDefault();
+    }
+    lastTouchTime = now;
+  }, { passive: false });
+  
+  // Prevent context menu on long press
+  document.addEventListener('contextmenu', function(e) {
+    if (e.target.closest('.cell, .nav-btn, .action-btn, .control-btn')) {
+      e.preventDefault();
+    }
+  });
+  
+  // Enhanced touch feedback for game cells
+  document.addEventListener('touchstart', function(e) {
+    if (e.target.classList.contains('cell')) {
+      e.target.style.transform = 'scale(0.95)';
+      e.target.style.transition = 'transform 0.1s ease';
+    }
+  }, { passive: true });
+  
+  document.addEventListener('touchend', function(e) {
+    if (e.target.classList.contains('cell')) {
+      setTimeout(() => {
+        e.target.style.transform = 'scale(1)';
+      }, 100);
+    }
+  }, { passive: true });
+  
+  // Handle device orientation changes
+  window.addEventListener('orientationchange', function() {
+    setTimeout(() => {
+      // Adjust layout after orientation change
+      updateBoardLayout();
+      // Hide address bar on mobile browsers
+      window.scrollTo(0, 1);
+    }, 100);
+  });
+  
+  // Optimize for iOS Safari viewport
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+    const viewportMeta = document.querySelector('meta[name="viewport"]');
+    if (viewportMeta) {
+      viewportMeta.setAttribute('content', 
+        'width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1.0'
+      );
+    }
+  }
+  
+  // Add haptic feedback for supported devices
+  if ('vibrate' in navigator && isMobile) {
+    enableHapticFeedback();
+  }
+}
+
+// Enhanced board layout for different screen sizes
+function updateBoardLayout() {
+  const screenWidth = window.innerWidth;
+  const screenHeight = window.innerHeight;
+  const isLandscape = screenWidth > screenHeight;
+  
+  if (isMobile) {
+    if (screenWidth <= 360) {
+      // Very small screens
+      updateCellSize(65);
+    } else if (screenWidth <= 480) {
+      // Small mobile screens
+      updateCellSize(75);
+    } else if (isLandscape && screenHeight <= 500) {
+      // Landscape mobile
+      updateCellSize(60);
+    } else {
+      // Default mobile
+      updateCellSize(80);
+    }
+  }
+}
+
+// Dynamic cell size adjustment
+function updateCellSize(size) {
+  const cells = document.querySelectorAll('.cell');
+  const board = document.querySelector('.board');
+  
+  if (board) {
+    board.style.gridTemplateColumns = `repeat(3, ${size}px)`;
+    board.style.gridTemplateRows = `repeat(3, ${size}px)`;
+  }
+  
+  cells.forEach(cell => {
+    cell.style.width = `${size}px`;
+    cell.style.height = `${size}px`;
+    cell.style.fontSize = `${size * 0.25}rem`;
+  });
+}
+
+// Haptic feedback for mobile devices
+function enableHapticFeedback() {
+  const addHapticToElement = (element, intensity = 10) => {
+    element.addEventListener('touchstart', () => {
+      if (soundEnabled && navigator.vibrate) {
+        navigator.vibrate(intensity);
+      }
+    }, { passive: true });
+  };
+  
+  // Add haptic feedback to interactive elements
+  document.querySelectorAll('.cell').forEach(cell => addHapticToElement(cell, 15));
+  document.querySelectorAll('.nav-btn, .action-btn, .control-btn').forEach(btn => addHapticToElement(btn, 10));
+}
+
+// Enhanced touch handling for game cells
+function handleCellTouch(e, index) {
+  e.preventDefault();
+  
+  // Prevent multiple rapid touches
+  if (e.target.dataset.touching === 'true') return;
+  e.target.dataset.touching = 'true';
+  
+  setTimeout(() => {
+    e.target.dataset.touching = 'false';
+  }, 200);
+  
+  // Make the move
+  makeMove(index);
+}
+
+// Improved mobile event listeners
+function setupMobileEventListeners() {
+  // Enhanced cell interaction for mobile
+  boardElement.addEventListener('touchend', function(e) {
+    if (e.target.classList.contains('cell') && gameActive) {
+      const index = parseInt(e.target.dataset.index);
+      if (board[index] === null) {
+        handleCellTouch(e, index);
+      }
+    }
+  }, { passive: false });
+  
+  // Fallback click events for desktop/hybrid devices
+  boardElement.addEventListener('click', function(e) {
+    if (!isTouch && e.target.classList.contains('cell') && gameActive) {
+      const index = parseInt(e.target.dataset.index);
+      if (board[index] === null) {
+        makeMove(index);
+      }
+    }
+  });
+  
+  // Enhanced fullscreen for mobile
+  if (fullscreenButton) {
+    fullscreenButton.addEventListener('click', toggleFullscreen);
+    fullscreenButton.addEventListener('touchend', function(e) {
+      e.preventDefault();
+      toggleFullscreen();
+    });
+  }
+}
+
+// Enhanced fullscreen functionality
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    if (document.documentElement.requestFullscreen) {
+      document.documentElement.requestFullscreen();
+    } else if (document.documentElement.webkitRequestFullscreen) {
+      document.documentElement.webkitRequestFullscreen();
+    } else if (document.documentElement.msRequestFullscreen) {
+      document.documentElement.msRequestFullscreen();
+    }
+    
+    // Update button text
+    const btnText = fullscreenButton.querySelector('.nav-text');
+    const btnIcon = fullscreenButton.querySelector('.nav-icon');
+    if (btnText) btnText.textContent = 'Exit Fullscreen';
+    if (btnIcon) btnIcon.textContent = '⛶';
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    } else if (document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    } else if (document.msExitFullscreen) {
+      document.msExitFullscreen();
+    }
+    
+    // Update button text
+    const btnText = fullscreenButton.querySelector('.nav-text');
+    const btnIcon = fullscreenButton.querySelector('.nav-icon');
+    if (btnText) btnText.textContent = 'Fullscreen';
+    if (btnIcon) btnIcon.textContent = '⛶';
+  }
+}
+
+// Mobile-optimized game initialization
+function initMobileGame() {
+  initMobileFeatures();
+  updateBoardLayout();
+  setupMobileEventListeners();
+  
+  // Add mobile-specific classes
+  if (isMobile) {
+    document.body.classList.add('mobile-device');
+  }
+  
+  if (isTouch) {
+    document.body.classList.add('touch-device');
   }
 }
 

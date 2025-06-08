@@ -646,6 +646,306 @@ body {
   }
 }
 
+/* Enhanced Mobile-First Responsive Design */
+
+/* Touch-friendly improvements */
+.cell,
+.nav-btn,
+.action-btn,
+.control-btn,
+.mode-btn {
+  min-height: 44px; /* Apple's recommended minimum touch target */
+  min-width: 44px;
+  touch-action: manipulation; /* Prevent zoom on double-tap */
+  -webkit-tap-highlight-color: transparent; /* Remove iOS highlight */
+}
+
+/* Improved mobile typography */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Enhanced mobile layout for very small screens */
+@media (max-width: 360px) {
+  .game-container {
+    padding: 0.25rem;
+  }
+  
+  .site-header .container {
+    padding: 0 0.5rem;
+  }
+  
+  .header-content {
+    padding: 0.75rem 0;
+  }
+  
+  .logo {
+    font-size: 1.1rem;
+  }
+  
+  .game-version {
+    font-size: 0.65rem;
+    padding: 0.2rem 0.4rem;
+  }
+  
+  .nav-btn {
+    padding: 0.6rem;
+    font-size: 0.8rem;
+  }
+  
+  .game-title {
+    font-size: 1.5rem;
+  }
+  
+  .game-subtitle {
+    font-size: 0.9rem;
+    padding: 0 0.5rem;
+  }
+  
+  .board {
+    grid-template-columns: repeat(3, 65px);
+    grid-template-rows: repeat(3, 65px);
+    gap: 6px;
+    padding: 0.75rem;
+  }
+  
+  .cell {
+    width: 65px;
+    height: 65px;
+    font-size: 1.6rem;
+    border-radius: 8px;
+  }
+  
+  .game-stats {
+    gap: 0.25rem;
+  }
+  
+  .stat-card {
+    padding: 0.4rem 0.6rem;
+    min-width: 55px;
+  }
+  
+  .stat-label {
+    font-size: 0.7rem;
+  }
+  
+  .stat-value {
+    font-size: 1.1rem;
+  }
+  
+  .control-section {
+    padding: 1rem;
+  }
+  
+  .mode-btn,
+  .control-btn {
+    padding: 0.6rem 0.8rem;
+    font-size: 0.9rem;
+  }
+  
+  .game-result {
+    padding: 1rem;
+    margin: 0.5rem;
+    min-width: 200px;
+  }
+  
+  .result-icon {
+    font-size: 3rem;
+  }
+  
+  .game-result h2 {
+    font-size: 1.5rem;
+  }
+  
+  .game-result p {
+    font-size: 1rem;
+  }
+}
+
+/* Landscape orientation optimizations */
+@media (max-height: 500px) and (orientation: landscape) {
+  body {
+    overflow-y: auto;
+  }
+  
+  .game-container {
+    padding: 0.5rem;
+  }
+  
+  .game-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+  
+  .game-title-section {
+    flex: 1;
+  }
+  
+  .game-title {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .game-subtitle {
+    font-size: 0.9rem;
+  }
+  
+  .game-stats {
+    flex-direction: row;
+    gap: 0.5rem;
+  }
+  
+  .board {
+    grid-template-columns: repeat(3, 60px);
+    grid-template-rows: repeat(3, 60px);
+    gap: 5px;
+    padding: 0.5rem;
+  }
+  
+  .cell {
+    width: 60px;
+    height: 60px;
+    font-size: 1.5rem;
+  }
+  
+  .control-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  
+  .control-section {
+    padding: 1rem;
+  }
+}
+
+/* Enhanced touch interactions */
+.cell:active {
+  transform: scale(0.95);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.nav-btn:active,
+.action-btn:active,
+.control-btn:active,
+.mode-btn:active {
+  transform: scale(0.95);
+}
+
+/* iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  .cell,
+  .nav-btn,
+  .action-btn,
+  .control-btn,
+  .mode-btn {
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  
+  /* Fix for iOS viewport issues */
+  body {
+    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .cell {
+    border-width: 3px;
+  }
+  
+  .game-result {
+    border: 3px solid #fff;
+  }
+  
+  .nav-btn,
+  .action-btn,
+  .control-btn {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .cell,
+  .nav-btn,
+  .action-btn,
+  .control-btn,
+  .mode-btn {
+    transition: none;
+  }
+  
+  .game-area {
+    animation: none;
+  }
+  
+  @keyframes winnerPulse {
+    from, to {
+      transform: scale(1);
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    }
+  }
+  
+  .score-update {
+    animation: none;
+  }
+}
+
+/* PWA and fullscreen improvements */
+@media (display-mode: standalone) {
+  .site-header {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Android Chrome specific fixes */
+@media screen and (-webkit-min-device-pixel-ratio: 1) {
+  .cell:active {
+    background-color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .nav-btn:active {
+    background-color: rgba(102, 126, 234, 0.3);
+  }
+}
+
+/* Tablet portrait optimization */
+@media (min-width: 481px) and (max-width: 768px) and (orientation: portrait) {
+  .board {
+    grid-template-columns: repeat(3, 90px);
+    grid-template-rows: repeat(3, 90px);
+    gap: 10px;
+  }
+  
+  .cell {
+    width: 90px;
+    height: 90px;
+    font-size: 2.2rem;
+  }
+  
+  .game-title {
+    font-size: 2.2rem;
+  }
+  
+  .control-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
 /* Animation Effects */
 @keyframes fadeIn {
   from {
