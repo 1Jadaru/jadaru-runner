@@ -821,42 +821,160 @@ class AudioManager {
     this.enabled = true;
     this.musicVolume = 0.3;
     this.sfxVolume = 0.5;
+    this.audioContext = null;
+    this.initWebAudio();
   }
 
+  initWebAudio() {
+    try {
+      this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    } catch (error) {
+      console.warn('Web Audio API not supported:', error);
+    }
+  }
+
+  // Generate simple sound effects using Web Audio API
+  generateSound(type) {
+    if (!this.audioContext || !this.enabled) return;
+
+    const oscillator = this.audioContext.createOscillator();
+    const gainNode = this.audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(this.audioContext.destination);
+    
+    // Configure sound based on type
+    switch (type) {
+      case 'coinCollect':
+        oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1200, this.audioContext.currentTime + 0.1);
+        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+        break;
+      case 'jump':
+        oscillator.frequency.setValueAtTime(300, this.audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(600, this.audioContext.currentTime + 0.15);
+        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+        break;
+      case 'powerup':
+        oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(880, this.audioContext.currentTime + 0.1);
+        oscillator.frequency.exponentialRampToValueAtTime(1320, this.audioContext.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.12, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+        break;
+      case 'levelUp':
+        // Play a chord progression
+        oscillator.frequency.setValueAtTime(523, this.audioContext.currentTime); // C
+        oscillator.frequency.setValueAtTime(659, this.audioContext.currentTime + 0.1); // E
+        oscillator.frequency.setValueAtTime(784, this.audioContext.currentTime + 0.2); // G
+        oscillator.frequency.setValueAtTime(1047, this.audioContext.currentTime + 0.3); // C
+        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+        break;
+      default:
+        oscillator.frequency.value = 440;
+        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+    }
+    
+    oscillator.start();
+    oscillator.stop(this.audioContext.currentTime + 0.5);
+  }
   async loadSound(name, url) {
     try {
-      this.sounds[name] = new Audio(url);
+      this.sounds[name] = new Audio();
+      this.sounds[name].crossOrigin = "anonymous";
       this.sounds[name].volume = this.sfxVolume;
+      
+      // Create a promise to handle loading
+      const loadPromise = new Promise((resolve, reject) => {
+        this.sounds[name].addEventListener('canplaythrough', resolve);
+        this.sounds[name].addEventListener('error', reject);
+        this.sounds[name].src = url;
+      });
+      
+      // Set a timeout for loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Audio loading timeout')), 5000)
+      );
+      
+      await Promise.race([loadPromise, timeoutPromise]);
+      console.log(`Successfully loaded sound: ${name}`);
     } catch (error) {
       console.warn(`Failed to load sound: ${name}`, error);
+      // Create a silent dummy audio for fallback
+      this.sounds[name] = null;
     }
   }
-
   async loadMusic(name, url) {
     try {
-      this.music[name] = new Audio(url);
+      this.music[name] = new Audio();
+      this.music[name].crossOrigin = "anonymous";
       this.music[name].volume = this.musicVolume;
       this.music[name].loop = true;
+      
+      // Create a promise to handle loading
+      const loadPromise = new Promise((resolve, reject) => {
+        this.music[name].addEventListener('canplaythrough', resolve);
+        this.music[name].addEventListener('error', reject);
+        this.music[name].src = url;
+      });
+      
+      // Set a timeout for loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Music loading timeout')), 5000)
+      );
+      
+      await Promise.race([loadPromise, timeoutPromise]);
+      console.log(`Successfully loaded music: ${name}`);
     } catch (error) {
       console.warn(`Failed to load music: ${name}`, error);
+      // Create a silent dummy audio for fallback
+      this.music[name] = null;
     }
-  }
+  }  playSound(name) {
+    if (!this.enabled) return;
 
-  playSound(name) {
-    if (this.enabled && this.sounds[name]) {
+    // Try to play loaded audio first
+    if (this.sounds[name]) {
       try {
-        this.sounds[name].currentTime = 0;
-        this.sounds[name].play();
+        // Check if the audio is loaded and ready
+        if (this.sounds[name].readyState >= 2) {
+          this.sounds[name].currentTime = 0;
+          const playPromise = this.sounds[name].play();
+          
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.warn(`Failed to play sound: ${name}`, error);
+              // Fallback to generated sound
+              this.generateSound(name);
+            });
+          }
+          return; // Successfully played loaded audio
+        }
       } catch (error) {
         console.warn(`Failed to play sound: ${name}`, error);
       }
     }
+    
+    // Fallback to generated sound using Web Audio API
+    this.generateSound(name);
   }
-
   playMusic(name) {
     if (this.enabled && this.music[name]) {
       try {
-        this.music[name].play();
+        // Check if the audio is loaded and ready
+        if (this.music[name].readyState >= 2) {
+          const playPromise = this.music[name].play();
+          
+          if (playPromise !== undefined) {
+            playPromise.catch(error => {
+              console.warn(`Failed to play music: ${name}`, error);
+            });
+          }
+        }
       } catch (error) {
         console.warn(`Failed to play music: ${name}`, error);
       }
@@ -992,8 +1110,10 @@ class BabylonGame {
     await this.loadAllAudio();
     this.uiManager.showLoadingProgress(100);
   }
-
   async loadAllAudio() {
+    console.log('Loading audio assets...');
+    
+    // Try to load external audio files, but don't fail if they don't work
     const audioPromises = [
       this.audioManager.loadSound('coinCollect', CONFIG.ASSETS.SOUNDS.COIN_COLLECT),
       this.audioManager.loadSound('powerup', CONFIG.ASSETS.SOUNDS.POWERUP),
@@ -1001,7 +1121,14 @@ class BabylonGame {
       this.audioManager.loadSound('levelUp', CONFIG.ASSETS.SOUNDS.LEVEL_UP)
     ];
     
-    await Promise.all(audioPromises);
+    try {
+      await Promise.all(audioPromises);
+      console.log('External audio loaded successfully');
+    } catch (error) {
+      console.warn('Some audio files failed to load, will use generated sounds:', error);
+    }
+    
+    console.log('Audio system ready (with Web Audio API fallback)');
   }
 
   setupCamera() {
