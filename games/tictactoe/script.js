@@ -277,19 +277,7 @@ function playSound(type) {
       break;
   }
   
-  oscillator.start();
-  oscillator.stop(audioContext.currentTime + 0.5);
-}
-
-// Toggle fullscreen
-function toggleFullscreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement.requestFullscreen().catch(err => {
-      console.log('Error attempting to enable fullscreen:', err);
-    });
-  } else {
-    document.exitFullscreen();
-  }
+  oscillator.start();  oscillator.stop(audioContext.currentTime + 0.5);
 }
 
 // Set game mode
