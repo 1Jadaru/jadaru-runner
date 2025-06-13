@@ -2,7 +2,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #111827;
+  background-color: #1F2937;
   color: #D1D5DB;
 }
 
@@ -15,7 +15,7 @@ body {
 
 /* Header */
 .site-header {
-  background-color: #1F2937;
+  background-color: #374151;
   padding: 1rem 0;
   border-bottom: 1px solid #374151;
 }
@@ -41,7 +41,7 @@ body {
 .hero {
   text-align: center;
   padding: 6rem 0;
-  background: linear-gradient(145deg, #111827, #1F2937);
+  background: linear-gradient(145deg, #374151, #4B5563);
   animation: fadeIn 1.5s ease-out;
 }
 
@@ -109,7 +109,7 @@ body {
 }
 
 .game-card {
-  background: linear-gradient(145deg, #1F2937, #374151);
+  background: linear-gradient(145deg, #374151, #4B5563);
   border-radius: 10px;
   padding: 1.5rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
@@ -178,7 +178,7 @@ body {
 
 /* Footer */
 .site-footer {
-  background-color: #1F2937;
+  background-color: #374151;
   padding: 2rem 0;
   text-align: center;
   border-top: 1px solid #374151;
@@ -343,7 +343,7 @@ body {
 /* Tools Section */
 .tools-section {
   padding: 5rem 0;
-  background: linear-gradient(180deg, #111827, #1F2937);
+  background: linear-gradient(180deg, #374151, #4B5563);
 }
 
 .tools-grid {
@@ -354,7 +354,7 @@ body {
 }
 
 .tool-card {
-  background: linear-gradient(145deg, #1F2937, #374151);
+  background: linear-gradient(145deg, #374151, #4B5563);
   border-radius: 12px;
   padding: 2rem;
   text-align: center;
@@ -396,7 +396,7 @@ body {
 /* Enhanced Games Section */
 .games-section {
   padding: 5rem 0;
-  background: linear-gradient(180deg, #1F2937, #111827);
+  background: linear-gradient(180deg, #4B5563, #374151);
 }
 
 .game-card {
