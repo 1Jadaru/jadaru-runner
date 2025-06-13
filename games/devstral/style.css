@@ -5,6 +5,8 @@ html, body {
   margin: 0;
   overflow: hidden;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: #121212; /* Dark background for the page */
+  color: #e0e0e0; /* Light text color for general page content */
 }
 
 #renderCanvas {
@@ -25,6 +27,7 @@ html, body {
   user-select: none;
   backdrop-filter: blur(4px);
   border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 5px; /* Add some margin between clustered elements */
 }
 
 #forceLabel {
@@ -38,6 +41,75 @@ html, body {
   left: 10px;
   font-size: 20px;
   font-weight: bold;
+  background: rgba(0,0,0,0.7); /* Ensure it has a background */
+  padding: 8px 16px; /* Ensure padding */
+  border-radius: 8px; /* Ensure border-radius */
+}
+
+#topRightCluster {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end; /* Align items to the right */
+}
+
+#topRightCluster .ui-element {
+  position: relative; /* Override absolute positioning for children */
+  top: auto;
+  right: auto;
+  left: auto;
+  bottom: auto;
+  margin-bottom: 8px; /* Spacing between elements in the cluster */
+}
+
+/* Specific styles for elements within #topRightCluster if needed */
+#forceControl {
+  /* background: rgba(0,0,0,0.85); Already in .ui-element, can be more specific if needed */
+  padding: 10px;
+  min-width: 220px; /* Adjusted min-width */
+}
+
+#forceControl > div:first-child { /* Styling for "Movement Force" text */
+  font-weight: bold;
+  margin-bottom: 10px;
+  color: #4CAF50;
+}
+
+#forceControl > div:nth-child(2) { /* Styling for buttons and slider container */
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+#forceControl button {
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  margin: 0 5px; /* Adjusted margin */
+}
+
+#forceControl #forceDecrease { background: #ff4444; }
+#forceControl #forceIncrease { background: #44ff44; }
+
+#forceControl input[type="range"] {
+  flex: 1;
+  margin: 0 5px; /* Adjusted margin */
+}
+
+#forceControl > div:nth-child(3) { /* Styling for force value text */
+  text-align: center;
+  font-size: 14px;
+}
+
+#forceControl > div:last-child { /* Styling for shortcuts text */
+  font-size: 12px;
+  color: #ccc;
+  margin-top: 5px;
+  text-align: center;
 }
 
 #instructions {
@@ -46,31 +118,40 @@ html, body {
   transform: translateX(-50%);
   font-size: 16px;
   text-align: center;
+  width: auto; /* Allow width to be determined by content */
+  max-width: 90%; /* Prevent it from being too wide on large screens */
+  background: rgba(0,0,0,0.7); /* Ensure it has a background */
+  padding: 8px 16px; /* Ensure padding */
+  border-radius: 8px; /* Ensure border-radius */
+}
+
+#resetBtn, 
+#soundToggle, 
+#settingsBtn, 
+#statsBtn, 
+#pauseBtn {
+  /* General button styling is in .ui-element, specific overrides below if needed */
+  padding: 8px 12px; /* Slightly adjusted padding for consistency */
+  font-size: 15px; /* Consistent font size */
+  width: 150px; /* Give buttons a consistent width */
+  text-align: left; /* Align text to the left for icon + text */
 }
 
 #resetBtn {
-  top: 60px;
-  right: 10px;
-  font-size: 16px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  border: none;
+  /* top: 60px; right: 10px; Handled by #topRightCluster */
   background: linear-gradient(135deg, #2196f3, #1976d2);
   color: #fff;
-  cursor: pointer;
-  transition: all 0.3s ease;
   font-weight: bold;
 }
 
 #resetBtn:hover {
   background: linear-gradient(135deg, #1976d2, #1565c0);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+  transform: translateY(-1px); /* Adjusted hover effect */
+  box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3); /* Adjusted shadow */
 }
 
 #gameStats {
-  top: 100px;
-  right: 10px;
+  /* top: 100px; right: 10px; Handled by #topRightCluster */
   font-size: 14px;
 }
 
@@ -219,30 +300,59 @@ html, body {
 
 /* Game Stats Panel */
 .stats-panel {
-  position: absolute;
-  top: 140px;
-  right: 10px;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 15px;
+  position: fixed; /* Changed from absolute to fixed for viewport anchoring */
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%); /* Center the panel */
+  background: rgba(0, 0, 0, 0.85); /* Slightly darker */
+  padding: 20px; /* Increased padding */
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(4px);
-  min-width: 200px;
+  border: 1px solid rgba(255, 255, 255, 0.15); /* Slightly more visible border */
+  backdrop-filter: blur(5px); /* Increased blur */
+  min-width: 300px; /* Adjusted min-width */
+  max-width: 90vw; /* Ensure it doesn't exceed viewport width */
   opacity: 0;
   visibility: hidden;
-  transition: all 0.3s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease; /* Added transform to transition */
+  z-index: 2500; /* Ensure it's above other UI elements */
 }
 
 .stats-panel.active {
   opacity: 1;
   visibility: visible;
+  transform: translate(-50%, -50%) scale(1); /* Added scale for entry animation */
 }
 
-.stats-item {
+.stats-panel h3 { /* Added styling for the heading */
+  color: #4CAF50; /* Green accent color */
+  margin-top: 0;
+  margin-bottom: 15px;
+  text-align: center;
+  font-size: 20px;
+}
+
+.stats-grid { /* Added for better layout of stats */
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Responsive columns */
+  gap: 10px; /* Space between grid items */
   color: #fff;
-  margin: 5px 0;
   font-family: monospace;
   font-size: 14px;
+}
+
+.stats-grid > div { /* Styling for each stat item */
+  background: rgba(255,255,255,0.05);
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.stats-grid > div span:first-child { /* Label part of the stat */
+  font-weight: bold;
+  color: #aaa;
+}
+
+.stats-grid > div span:last-child { /* Value part of the stat */
+  color: #00ffcc; /* Bright color for the value */
 }
 
 /* Level Progression */
@@ -513,8 +623,49 @@ html, body {
   backdrop-filter: blur(4px);
 }
 
-@media (max-width: 768px) and (pointer: coarse) {
-  .mobile-controls {
-    display: flex;
-  }
+/* Basic styling for the game header */
+.game-header {
+  background-color: #1a1a1a; /* Dark background, adjust as needed */
+  padding: 10px 20px;
+  text-align: center;
+  position: fixed; /* Or relative/absolute depending on desired behavior */
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000; /* Ensure it's above other game elements */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.game-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1200px; /* Adjust as per your main site's container */
+  margin: 0 auto;
+}
+
+.game-header .back-to-home,
+.game-header .more-games {
+  color: #00c3ff; /* Light blue, adjust to your theme */
+  text-decoration: none;
+  font-weight: bold;
+  padding: 8px 15px;
+  border-radius: 4px;
+  transition: background-color 0.3s ease;
+}
+
+.game-header .back-to-home:hover,
+.game-header .more-games:hover {
+  background-color: #333;
+}
+
+.current-game-title {
+  color: #ffffff;
+  font-size: 1.2em;
+  margin: 0;
+}
+
+/* Adjust body padding if header is fixed to prevent overlap */
+body {
+  padding-top: 60px; /* Adjust based on actual header height */
 }

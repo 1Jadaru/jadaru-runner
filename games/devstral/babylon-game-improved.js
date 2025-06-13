@@ -42,10 +42,10 @@ const CONFIG = {
       SKYBOX: "https://playground.babylonjs.com/textures/skybox"
     },
     SOUNDS: {
-      COIN_COLLECT: "https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b7bfa.mp3",
-      POWERUP: "https://cdn.pixabay.com/audio/2021/08/09/audio_0625c1539c.mp3",
-      JUMP: "https://cdn.pixabay.com/audio/2022/02/15/audio_f2d1b8f39f.mp3",
-      LEVEL_UP: "https://cdn.pixabay.com/audio/2021/10/05/audio_4de7946db5.mp3"
+      // COIN_COLLECT: "https://cdn.pixabay.com/audio/2022/03/15/audio_115b9b7bfa.mp3",
+      // POWERUP: "https://cdn.pixabay.com/audio/2021/08/09/audio_0625c1539c.mp3",
+      // JUMP: "https://cdn.pixabay.com/audio/2022/02/15/audio_f2d1b8f39f.mp3",
+      // LEVEL_UP: "https://cdn.pixabay.com/audio/2021/10/05/audio_4de7946db5.mp3"
     }
   }
 };
@@ -508,11 +508,13 @@ class CollectibleManager {
 
 // UI Manager
 class UIManager {
-  constructor(gameState) {
+  constructor(gameState, audioManager) { // Added audioManager parameter
     this.gameState = gameState;
+    this.audioManager = audioManager; // Store audioManager instance
     this.elements = {};
     this.getUIElements();
     this.setupEventListeners();
+    this.setInitialSoundButtonState(); // Call new method
   }
 
   getUIElements() {
@@ -522,17 +524,32 @@ class UIManager {
     this.elements.instructions = document.getElementById('instructions');
     this.elements.levelNotification = document.getElementById('levelNotification');
     this.elements.statsPanel = document.getElementById('statsPanel');
+    this.elements.soundToggle = document.getElementById('soundToggle'); // Added soundToggle
+    this.elements.settingsQualitySelect = document.getElementById('settingsQualitySelect');
+    this.elements.debugQualitySelect = document.getElementById('debugQualitySelect');
+    // Make sure all relevant UI elements are fetched here
+  }
+
+  setInitialSoundButtonState() {
+    if (this.elements.soundToggle && this.audioManager) {
+      this.elements.soundToggle.innerText = this.audioManager.enabled ? "🔊 Sound" : "🔇 Muted";
+    }
   }
 
   setupEventListeners() {
     // Game controls
-    document.getElementById("resetBtn").addEventListener("click", () => this.resetGame());
+    const resetBtn = document.getElementById("resetBtn");
+    if (resetBtn) {
+        resetBtn.addEventListener("click", () => this.resetGame());
+    }
     
     // Audio controls
-    document.getElementById("soundToggle").addEventListener("click", () => {
-      const enabled = this.audioManager.toggle();
-      document.getElementById("soundToggle").innerText = enabled ? "🔊 Sound" : "🔇 Muted";
-    });
+    if (this.elements.soundToggle && this.audioManager) { // Use this.elements.soundToggle
+      this.elements.soundToggle.addEventListener("click", () => {
+        const enabled = this.audioManager.toggle();
+        this.elements.soundToggle.innerText = enabled ? "🔊 Sound" : "🔇 Muted";
+      });
+    }
     
     // Settings controls
     document.getElementById("settingsBtn").addEventListener("click", () => this.openSettings());
@@ -818,10 +835,14 @@ class AudioManager {
   constructor() {
     this.sounds = {};
     this.music = {};
-    this.enabled = true;
+    this.enabled = false; // Changed to false
     this.musicVolume = 0.3;
     this.sfxVolume = 0.5;
     this.audioContext = null;
+    this.soundCooldowns = {}; // Added for managing sound cooldowns
+    this.SOUND_COOLDOWN_MS = {
+      'powerup': 500 // Cooldown for powerup sound in milliseconds
+    };
     this.initWebAudio();
   }
 
@@ -843,44 +864,59 @@ class AudioManager {
     oscillator.connect(gainNode);
     gainNode.connect(this.audioContext.destination);
     
+    let soundConfigured = true; // Flag to track if sound was configured
     // Configure sound based on type
     switch (type) {
-      case 'coinCollect':
-        oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(1200, this.audioContext.currentTime + 0.1);
+      case 'coinCollect': // Short, bright, ascending
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(880, this.audioContext.currentTime); // A5
+        oscillator.frequency.exponentialRampToValueAtTime(1046.50, this.audioContext.currentTime + 0.05); // C6
+        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.15);
+        break;
+      case 'jump': // Quick, percussive, rising
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(220, this.audioContext.currentTime); // A3
+        oscillator.frequency.exponentialRampToValueAtTime(440, this.audioContext.currentTime + 0.1); // A4
         gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.15);
         break;
-      case 'jump':
-        oscillator.frequency.setValueAtTime(300, this.audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(600, this.audioContext.currentTime + 0.15);
-        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.2);
-        break;
-      case 'powerup':
-        oscillator.frequency.setValueAtTime(440, this.audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(880, this.audioContext.currentTime + 0.1);
-        oscillator.frequency.exponentialRampToValueAtTime(1320, this.audioContext.currentTime + 0.2);
+      case 'powerup': // Shimmering, positive arpeggio
+        oscillator.type = 'sine';
         gainNode.gain.setValueAtTime(0.12, this.audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.3);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.4);
+
+        // Ascending arpeggio
+        oscillator.frequency.setValueAtTime(523.25, this.audioContext.currentTime); // C5
+        oscillator.frequency.linearRampToValueAtTime(659.25, this.audioContext.currentTime + 0.07); // E5
+        oscillator.frequency.linearRampToValueAtTime(783.99, this.audioContext.currentTime + 0.14); // G5
+        oscillator.frequency.linearRampToValueAtTime(1046.50, this.audioContext.currentTime + 0.21); // C6
         break;
-      case 'levelUp':
-        // Play a chord progression
-        oscillator.frequency.setValueAtTime(523, this.audioContext.currentTime); // C
-        oscillator.frequency.setValueAtTime(659, this.audioContext.currentTime + 0.1); // E
-        oscillator.frequency.setValueAtTime(784, this.audioContext.currentTime + 0.2); // G
-        oscillator.frequency.setValueAtTime(1047, this.audioContext.currentTime + 0.3); // C
-        gainNode.gain.setValueAtTime(0.15, this.audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.5);
+      case 'levelUp': // Triumphant, short musical phrase
+        oscillator.type = 'sawtooth';
+        gainNode.gain.setValueAtTime(0.18, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + 0.7);
+
+        // Play a short, uplifting melody
+        const t = this.audioContext.currentTime;
+        oscillator.frequency.setValueAtTime(392.00, t); // G4
+        oscillator.frequency.linearRampToValueAtTime(523.25, t + 0.1); // C5
+        oscillator.frequency.linearRampToValueAtTime(659.25, t + 0.2); // E5
+        oscillator.frequency.linearRampToValueAtTime(783.99, t + 0.35); // G5 (hold)
+        oscillator.frequency.setValueAtTime(1046.50, t + 0.45); // C6 (higher octave)
         break;
       default:
-        oscillator.frequency.value = 440;
-        gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1);
+        console.warn(`AudioManager: Attempted to generate sound for unknown type: ${type}`);
+        soundConfigured = false; // Mark that no sound was configured
+        // No default beep will be played
+        return; 
     }
     
-    oscillator.start();
-    oscillator.stop(this.audioContext.currentTime + 0.5);
+    // Only start/stop if a sound was actually configured
+    if (soundConfigured) {
+        oscillator.start();
+        oscillator.stop(this.audioContext.currentTime + 0.5);
+    }
   }
   async loadSound(name, url) {
     try {
@@ -904,8 +940,7 @@ class AudioManager {
       console.log(`Successfully loaded sound: ${name}`);
     } catch (error) {
       console.warn(`Failed to load sound: ${name}`, error);
-      // Create a silent dummy audio for fallback
-      this.sounds[name] = null;
+      // this.sounds[name] = null; // Keep the Audio object even if loading failed
     }
   }
   async loadMusic(name, url) {
@@ -937,30 +972,55 @@ class AudioManager {
   }  playSound(name) {
     if (!this.enabled) return;
 
-    // Try to play loaded audio first
-    if (this.sounds[name]) {
-      try {
-        // Check if the audio is loaded and ready
-        if (this.sounds[name].readyState >= 2) {
-          this.sounds[name].currentTime = 0;
-          const playPromise = this.sounds[name].play();
-          
-          if (playPromise !== undefined) {
-            playPromise.catch(error => {
-              console.warn(`Failed to play sound: ${name}`, error);
-              // Fallback to generated sound
-              this.generateSound(name);
-            });
-          }
-          return; // Successfully played loaded audio
-        }
-      } catch (error) {
-        console.warn(`Failed to play sound: ${name}`, error);
+    // Check cooldown for this sound
+    if (this.SOUND_COOLDOWN_MS[name]) {
+      const now = Date.now();
+      if (this.soundCooldowns[name] && (now - this.soundCooldowns[name] < this.SOUND_COOLDOWN_MS[name])) {
+        // console.log(`Sound '${name}' on cooldown. Skipping.`);
+        return; // Sound is on cooldown
       }
+      this.soundCooldowns[name] = now; // Set timestamp for this sound play
     }
-    
-    // Fallback to generated sound using Web Audio API
-    this.generateSound(name);
+
+    console.log(`Attempting to play sound: ${name}`); // Added for debugging
+
+    // Check if this sound name is configured for external loading in the current CONFIG
+    if (CONFIG.ASSETS.SOUNDS.hasOwnProperty(name) && CONFIG.ASSETS.SOUNDS[name]) {
+      // Sound is configured for external loading. Try to play the loaded Audio object.
+      if (this.sounds[name] && this.sounds[name] instanceof Audio) {
+        try {
+          if (this.sounds[name].readyState >= 2) { // HTMLMediaElement.HAVE_CURRENT_DATA or higher
+            this.sounds[name].currentTime = 0;
+            const playPromise = this.sounds[name].play();
+            
+            if (playPromise !== undefined) {
+              playPromise.catch(error => {
+                console.warn(`Failed to play sound: ${name}`, error);
+                console.log(`Falling back to generated sound for: ${name} (play error)`);
+                this.generateSound(name);
+              });
+            }
+            return; // Successfully initiated play of loaded audio
+          } else {
+            // Sound object exists but is not ready
+            console.warn(`Sound '${name}' (configured externally) exists but is not ready (readyState: ${this.sounds[name].readyState}). Falling back to generated sound.`);
+            this.generateSound(name); // Fallback if not ready
+          }
+        } catch (error) {
+          console.warn(`Error attempting to play sound: ${name}`, error);
+          console.log(`Falling back to generated sound for: ${name} (catch error)`);
+          this.generateSound(name); // Fallback on error
+        }
+      } else {
+        // Configured externally, but this.sounds[name] is not a valid Audio object
+        console.warn(`Sound '${name}' (configured externally) not found or not an Audio instance. Falling back to generated sound.`);
+        this.generateSound(name);
+      }
+    } else {
+      // Not configured for external loading in CONFIG, or URL is empty. Directly use procedural sound.
+      console.log(`Sound '${name}' not configured for external loading or URL is empty in CONFIG. Using generated sound.`);
+      this.generateSound(name);
+    }
   }
   playMusic(name) {
     if (this.enabled && this.music[name]) {
@@ -1021,10 +1081,12 @@ class BabylonGame {
     // Initialize game state first
     console.log('Initializing GameState...');
     this.gameState = new GameState();
-    console.log('Initializing UIManager...');
-    this.uiManager = new UIManager(this.gameState);
     console.log('Initializing AudioManager...');
-    this.audioManager = new AudioManager();
+    this.audioManager = new AudioManager(); // Instantiate AudioManager first
+    console.log('Initializing UIManager...');
+    this.uiManager = new UIManager(this.gameState, this.audioManager); // Pass audioManager to UIManager
+    console.log('Initializing PlayerController...');
+    this.playerController = null;
     
     // Expose game instance globally for performance monitor
     window.game = this;
@@ -1565,6 +1627,7 @@ class BabylonGame {
 
 // Initialize performance monitor
 const performanceMonitor = new PerformanceMonitor();
+
 
 // Debug utilities
 const GameDebug = {
