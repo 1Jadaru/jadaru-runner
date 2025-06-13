@@ -2,8 +2,8 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #121212;
-  color: #CCCCCC;
+  background-color: #111827;
+  color: #D1D5DB;
 }
 
 .container {
@@ -15,38 +15,38 @@ body {
 
 /* Header */
 .site-header {
-  background-color: #1F1F1F;
+  background-color: #1F2937;
   padding: 1rem 0;
-  border-bottom: 1px solid #2A2A2A;
+  border-bottom: 1px solid #374151;
 }
 
 .logo {
   font-size: 1.75rem;
-  color: #00C853;
+  color: #3B82F6;
   margin: 0;
 }
 
 .main-nav a {
   margin-left: 1.5rem;
   text-decoration: none;
-  color: #CCCCCC;
+  color: #D1D5DB;
   transition: color 0.2s ease-in-out;
 }
 
 .main-nav a:hover {
-  color: #D500F9;
+  color: #6366F1;
 }
 
 /* Hero */
 .hero {
   text-align: center;
   padding: 6rem 0;
-  background: linear-gradient(145deg, #121212, #1F1F1F);
+  background: linear-gradient(145deg, #111827, #1F2937);
   animation: fadeIn 1.5s ease-out;
 }
 
 .hero h2 {
-  color: #00C853;
+  color: #3B82F6;
   font-size: 2.5rem;
   margin-bottom: 1rem;
 }
@@ -66,8 +66,8 @@ body {
 
 .btn {
   padding: 0.75rem 1.5rem;
-  background-color: #00C853;
-  color: #121212;
+  background-color: #3B82F6;
+  color: #111827;
   border: none;
   border-radius: 5px;
   font-weight: bold;
@@ -77,16 +77,16 @@ body {
 }
 
 .btn:hover {
-  background-color: #00a74d;
+  background-color: #2563EB;
 }
 
 .btn.secondary {
-  background-color: #D500F9;
+  background-color: #6366F1;
   color: #fff;
 }
 
 .btn.secondary:hover {
-  background-color: #b000c6;
+  background-color: #4F46E5;
 }
 
 /* Placeholder Sections */
@@ -96,7 +96,7 @@ body {
 }
 
 .placeholder-section h3 {
-  color: #00C853;
+  color: #3B82F6;
   font-size: 2rem;
 }
 
@@ -109,27 +109,27 @@ body {
 }
 
 .game-card {
-  background: linear-gradient(145deg, #1F1F1F, #2A2A2A);
+  background: linear-gradient(145deg, #1F2937, #374151);
   border-radius: 10px;
   padding: 1.5rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
-  border: 1px solid #333;
+  border: 1px solid #4B5563;
 }
 
 .game-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0, 200, 83, 0.1);
+  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.1);
 }
 
 .game-card h4 {
-  color: #00C853;
+  color: #3B82F6;
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
 }
 
 .game-card p {
-  color: #CCCCCC;
+  color: #D1D5DB;
   margin-bottom: 1rem;
   line-height: 1.5;
 }
@@ -142,12 +142,12 @@ body {
 }
 
 .feature-tag {
-  background: rgba(0, 200, 83, 0.1);
-  color: #00C853;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3B82F6;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.85rem;
-  border: 1px solid rgba(0, 200, 83, 0.3);
+  border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
 .game-buttons {
@@ -178,10 +178,10 @@ body {
 
 /* Footer */
 .site-footer {
-  background-color: #1F1F1F;
+  background-color: #1F2937;
   padding: 2rem 0;
   text-align: center;
-  border-top: 1px solid #2A2A2A;
+  border-top: 1px solid #374151;
   animation: fadeIn 1.5s ease-out;
 }
 
@@ -191,13 +191,13 @@ body {
 }
 
 .site-footer a {
-  color: #00C853;
+  color: #3B82F6;
   text-decoration: none;
   transition: color 0.2s ease-in-out;
 }
 
 .site-footer a:hover {
-  color: #D500F9;
+  color: #6366F1;
   text-decoration: underline;
 }
 
@@ -220,8 +220,8 @@ body {
   position: absolute;
   top: -40px;
   left: 6px;
-  background: #00C853;
-  color: #121212;
+  background: #3B82F6;
+  color: #111827;
   padding: 8px;
   text-decoration: none;
   border-radius: 4px;
@@ -242,13 +242,13 @@ body {
 }
 
 .logo a {
-  color: #00C853;
+  color: #3B82F6;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .logo a:hover {
-  color: #00a74d;
+  color: #2563EB;
 }
 
 .main-nav {
@@ -271,7 +271,7 @@ body {
   left: 0;
   width: 0;
   height: 2px;
-  background: #D500F9;
+  background: #6366F1;
   transition: width 0.3s ease;
 }
 
@@ -317,33 +317,33 @@ body {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #00C853, #00a74d);
-  color: #121212;
-  box-shadow: 0 4px 15px rgba(0, 200, 83, 0.3);
+  background: linear-gradient(135deg, #3B82F6, #2563EB);
+  color: #111827;
+  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
 }
 
 .btn-primary:hover {
-  background: linear-gradient(135deg, #00a74d, #008a42);
+  background: linear-gradient(135deg, #2563EB, #1E40AF);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 200, 83, 0.4);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .btn-secondary {
-  background: linear-gradient(135deg, #D500F9, #b000c6);
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
   color: #fff;
-  box-shadow: 0 4px 15px rgba(213, 0, 249, 0.3);
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
 }
 
 .btn-secondary:hover {
-  background: linear-gradient(135deg, #b000c6, #9a00a8);
+  background: linear-gradient(135deg, #4F46E5, #4338CA);
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(213, 0, 249, 0.4);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
 /* Tools Section */
 .tools-section {
   padding: 5rem 0;
-  background: linear-gradient(180deg, #121212, #1a1a1a);
+  background: linear-gradient(180deg, #111827, #1F2937);
 }
 
 .tools-grid {
@@ -354,19 +354,19 @@ body {
 }
 
 .tool-card {
-  background: linear-gradient(145deg, #1F1F1F, #2A2A2A);
+  background: linear-gradient(145deg, #1F2937, #374151);
   border-radius: 12px;
   padding: 2rem;
   text-align: center;
   position: relative;
-  border: 1px solid #333;
+  border: 1px solid #4B5563;
   transition: all 0.3s ease;
 }
 
 .tool-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 200, 83, 0.1);
-  border-color: #00C853;
+  box-shadow: 0 10px 30px rgba(59, 130, 246, 0.1);
+  border-color: #3B82F6;
 }
 
 .card-icon {
@@ -376,7 +376,7 @@ body {
 }
 
 .tool-card h4 {
-  color: #00C853;
+  color: #3B82F6;
   font-size: 1.3rem;
   margin-bottom: 1rem;
 }
@@ -385,18 +385,18 @@ body {
   position: absolute;
   top: 1rem;
   right: 1rem;
-  background: rgba(213, 0, 249, 0.2);
-  color: #D500F9;
+  background: rgba(99, 102, 241, 0.2);
+  color: #6366F1;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
-  border: 1px solid rgba(213, 0, 249, 0.3);
+  border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
 /* Enhanced Games Section */
 .games-section {
   padding: 5rem 0;
-  background: linear-gradient(180deg, #1a1a1a, #121212);
+  background: linear-gradient(180deg, #1F2937, #111827);
 }
 
 .game-card {
@@ -405,13 +405,13 @@ body {
 }
 
 .game-card.featured {
-  border: 2px solid #00C853;
-  background: linear-gradient(145deg, #1F2F1F, #2A3A2A);
+  border: 2px solid #3B82F6;
+  background: linear-gradient(145deg, #22323F, #374151);
 }
 
 .game-card.premium {
-  border: 2px solid #D500F9;
-  background: linear-gradient(145deg, #2F1F2F, #3A2A3A);
+  border: 2px solid #6366F1;
+  background: linear-gradient(145deg, #2F2F4F, #4338CA);
 }
 
 .card-header {
@@ -441,7 +441,7 @@ body {
 }
 
 .premium-badge {
-  background: linear-gradient(135deg, #D500F9, #b000c6);
+  background: linear-gradient(135deg, #6366F1, #4F46E5);
   color: #fff;
   padding: 0.25rem 0.75rem;
   border-radius: 20px;
@@ -489,7 +489,7 @@ body {
 }
 
 .footer-section h4 {
-  color: #00C853;
+  color: #3B82F6;
   font-size: 1.2rem;
   margin-bottom: 1rem;
 }
@@ -505,13 +505,13 @@ body {
 }
 
 .footer-section ul li a {
-  color: #CCCCCC;
+  color: #D1D5DB;
   text-decoration: none;
   transition: color 0.3s ease;
 }
 
 .footer-section ul li a:hover {
-  color: #00C853;
+  color: #3B82F6;
 }
 
 .social-links {
@@ -530,7 +530,7 @@ body {
 }
 
 .footer-bottom {
-  border-top: 1px solid #2A2A2A;
+  border-top: 1px solid #374151;
   padding-top: 2rem;
   text-align: center;
 }
