@@ -1,9 +1,0 @@
-# Migrations Directory
-
-This directory will contain your Prisma migration files after running:
-
-```bash
-npm run prisma:migrate
-```
-
-The migration files will be automatically generated based on your `schema.prisma` file.
