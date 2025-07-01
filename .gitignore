@@ -26,6 +26,11 @@ build/
 *.min.js
 *.min.css
 
+# Vite build artifacts
+.vite/
+vite.config.js.timestamp-*
+vite.config.ts.timestamp-*
+
 # Debug logs
 npm-debug.log*
 yarn-debug.log*
@@ -35,4 +40,19 @@ debug.log
 # Environment variables
 .env
 .env.local
-.env.*.local 
+.env.*.local
+
+# Package lock files (optional - uncomment if you want to ignore them)
+# package-lock.json
+# yarn.lock
+
+# TypeScript
+*.tsbuildinfo
+
+# Coverage directory used by tools like istanbul
+coverage/
+*.lcov
+
+# Temporary folders
+tmp/
+temp/ 

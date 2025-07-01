@@ -1,0 +1,14 @@
+# Prettier ignore patterns
+node_modules/
+dist/
+build/
+coverage/
+*.min.js
+*.min.css
+
+# Generated files
+package-lock.json
+yarn.lock
+
+# Prisma generated files
+prisma/generated/

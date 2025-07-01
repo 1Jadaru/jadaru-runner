@@ -1,0 +1,290 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for landlords/property managers
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  avatar    String?
+  tier      UserTier @default(FREE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  properties Property[]
+  expenses   Expense[]
+  reminders  Reminder[]
+
+  @@map("users")
+}
+
+// Property model
+model Property {
+  id          String        @id @default(cuid())
+  address     String
+  city        String
+  state       String
+  zipCode     String
+  type        PropertyType  @default(SINGLE_FAMILY)
+  bedrooms    Int?
+  bathrooms   Float?
+  squareFeet  Int?
+  purchasePrice Float?
+  currentValue  Float?
+  mortgage      Float?
+  insurance     PropertyInsurance?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Foreign Keys
+  ownerId     String
+  owner       User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  // Relations
+  leases      Lease[]
+  expenses    Expense[]
+  maintenanceTasks MaintenanceTask[]
+  reminders   Reminder[]
+
+  @@map("properties")
+}
+
+// Insurance tracking
+model PropertyInsurance {
+  id              String   @id @default(cuid())
+  provider        String
+  policyNumber    String
+  premium         Float
+  deductible      Float
+  coverageAmount  Float
+  startDate       DateTime
+  endDate         DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Foreign Keys
+  propertyId      String   @unique
+  property        Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("property_insurance")
+}
+
+// Tenant model
+model Tenant {
+  id        String   @id @default(cuid())
+  firstName String
+  lastName  String
+  email     String
+  phone     String
+  emergencyContact String?
+  emergencyPhone   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  leases    Lease[]
+
+  @@map("tenants")
+}
+
+// Lease model
+model Lease {
+  id           String      @id @default(cuid())
+  startDate    DateTime
+  endDate      DateTime
+  monthlyRent  Float
+  securityDeposit Float
+  status       LeaseStatus @default(ACTIVE)
+  terms        String?     // Additional lease terms
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  // Foreign Keys
+  propertyId   String
+  property     Property    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  tenantId     String
+  tenant       Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Relations
+  payments     Payment[]
+  reminders    Reminder[]
+
+  @@map("leases")
+}
+
+// Payment tracking
+model Payment {
+  id          String      @id @default(cuid())
+  amount      Float
+  dueDate     DateTime
+  paidDate    DateTime?
+  paymentType PaymentType @default(RENT)
+  status      PaymentStatus @default(PENDING)
+  notes       String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Foreign Keys
+  leaseId     String
+  lease       Lease       @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+// Expense tracking
+model Expense {
+  id          String       @id @default(cuid())
+  description String
+  amount      Float
+  category    ExpenseCategory
+  date        DateTime
+  receipt     String?      // File path to receipt image
+  notes       String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Foreign Keys
+  propertyId  String?
+  property    Property?    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("expenses")
+}
+
+// Maintenance task tracking
+model MaintenanceTask {
+  id          String            @id @default(cuid())
+  title       String
+  description String
+  priority    TaskPriority      @default(MEDIUM)
+  status      TaskStatus        @default(PENDING)
+  dueDate     DateTime?
+  completedDate DateTime?
+  estimatedCost Float?
+  actualCost    Float?
+  vendorName    String?
+  vendorContact String?
+  photos        String[]         // Array of photo file paths
+  notes         String?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  // Foreign Keys
+  propertyId  String
+  property    Property          @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  @@map("maintenance_tasks")
+}
+
+// Reminder system
+model Reminder {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  type        ReminderType
+  dueDate     DateTime
+  isCompleted Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Foreign Keys
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId  String?
+  property    Property?    @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  leaseId     String?
+  lease       Lease?       @relation(fields: [leaseId], references: [id], onDelete: Cascade)
+
+  @@map("reminders")
+}
+
+// Enums
+enum UserTier {
+  FREE
+  BASIC
+  PREMIUM
+}
+
+enum PropertyType {
+  SINGLE_FAMILY
+  DUPLEX
+  CONDO
+  TOWNHOUSE
+  APARTMENT
+  OTHER
+}
+
+enum LeaseStatus {
+  ACTIVE
+  EXPIRED
+  TERMINATED
+  PENDING
+}
+
+enum PaymentType {
+  RENT
+  SECURITY_DEPOSIT
+  PET_DEPOSIT
+  LATE_FEE
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+  PARTIAL
+}
+
+enum ExpenseCategory {
+  MAINTENANCE
+  REPAIRS
+  UTILITIES
+  INSURANCE
+  PROPERTY_TAX
+  MANAGEMENT_FEE
+  MARKETING
+  LEGAL
+  ACCOUNTING
+  SUPPLIES
+  OTHER
+}
+
+enum TaskPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ReminderType {
+  RENT_DUE
+  LEASE_EXPIRING
+  INSURANCE_RENEWAL
+  MAINTENANCE_DUE
+  PROPERTY_TAX
+  INSPECTION
+  OTHER
+}
