@@ -172,6 +172,14 @@ function init() {
     scene.add(leftBillboard);
     scene.add(rightBillboard);
   }
+
+  // Add this near the game start logic, e.g., when the game actually starts
+  if (typeof gtag === 'function') {
+    gtag('event', 'game_start', {
+      'event_category': 'Games',
+      'event_label': 'Runner Game (in-game)'
+    });
+  }
 }
 
 function keyDown(e) {
@@ -236,7 +244,15 @@ function setupTouchControls() {
   const restartBtn = document.createElement('button');
   restartBtn.id = 'restart-btn';
   restartBtn.textContent = 'Play Again';
-  restartBtn.onclick = () => location.reload();
+  restartBtn.onclick = () => {
+    if (typeof gtag === 'function') {
+      gtag('event', 'game_start', {
+        'event_category': 'Games',
+        'event_label': 'Runner Game (in-game)'
+      });
+    }
+    location.reload();
+  };
   document.body.appendChild(restartBtn);
 
   // Setup touch and mouse controls

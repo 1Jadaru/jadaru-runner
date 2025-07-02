@@ -1123,6 +1123,14 @@ class BabylonGame {
       console.log('Hiding loading screen...');
       this.uiManager.hideLoadingScreen();
       console.log('Game initialization completed successfully!');
+
+      // Track in-game start event
+      if (typeof gtag === 'function') {
+        gtag('event', 'game_start', {
+          'event_category': 'Games',
+          'event_label': '3D Physics Cube (in-game)'
+        });
+      }
     } catch (error) {
       console.error("Failed to initialize game:", error);
       console.error("Error stack:", error.stack);

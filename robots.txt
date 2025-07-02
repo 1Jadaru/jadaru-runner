@@ -1,0 +1,15 @@
+User-agent: *
+Disallow: /node_modules/
+Disallow: /.git/
+Disallow: /.env
+Disallow: /README.md
+Disallow: /LICENSE
+Disallow: /package.json
+Disallow: /package-lock.json
+Disallow: /yarn.lock
+
+# Allow everything else
+Allow: /
+
+# Sitemap (uncomment and update if you have one)
+Sitemap: https://jadaru.co/sitemap.xml 

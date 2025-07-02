@@ -18,6 +18,10 @@
 
     gtag('config', 'G-WSS4ZGFN9L');
   </script>
+  
+  <!-- Google AdSense -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6162151473120583"
+       crossorigin="anonymous"></script>
 </head>
 <body>
   <header class="site-header">
@@ -88,11 +92,11 @@
             <h2 id="result-title">Game Over!</h2>
             <p id="result-message">Player X wins!</p>
             <div class="result-actions">
-              <button class="action-btn primary" id="play-again-btn">
+              <button class="action-btn primary" id="play-again-btn" onclick="if(typeof gtag==='function'){gtag('event','game_start',{event_category:'Games',event_label:'Tic Tac Toe (in-game)'});}">
                 <span class="btn-icon">🔄</span>
                 <span>Play Again</span>
               </button>
-              <button class="action-btn secondary" id="new-game-btn">
+              <button class="action-btn secondary" id="new-game-btn" onclick="if(typeof gtag==='function'){gtag('event','game_start',{event_category:'Games',event_label:'Tic Tac Toe (in-game)'});}">
                 <span class="btn-icon">🆕</span>
                 <span>New Game</span>
               </button>

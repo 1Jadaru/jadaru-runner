@@ -186,6 +186,12 @@ export class UISystem {
     this.showGameUI();
     this.gameEngine.restart();
     this.updateScore(0);
+    if (typeof gtag === 'function') {
+      gtag('event', 'game_start', {
+        'event_category': 'Games',
+        'event_label': 'Runner Game Refactored (in-game)'
+      });
+    }
   }
   
   /**

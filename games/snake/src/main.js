@@ -223,6 +223,12 @@ class SnakeGameApp {
     const startBtn = document.getElementById('start-game-btn');
     if (startBtn) {
       startBtn.addEventListener('click', () => {
+        if (typeof gtag === 'function') {
+          gtag('event', 'game_start', {
+            'event_category': 'Games',
+            'event_label': 'Snake Game 3D (in-game)'
+          });
+        }
         if (this.game) {
           if (this.game.state === 'waiting' || this.game.state === 'gameOver') {
             this.game.startGame();
