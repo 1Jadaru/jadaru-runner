@@ -312,3 +312,12 @@ MIT License - feel free to use this project for learning or commercial purposes.
 - Responsive design and touch controls
 - High score persistence
 - Particle effects and visual feedback
+
+## Manual Testing
+
+Use `manual-test.html` for quick validation during development:
+
+1. Open the file in a browser.
+2. Click **Initialize Game** and **Start Game** to ensure it runs.
+3. Use the **Restart (dispose + init)** button and check the console log.
+   It will report the number of input listeners after restart (should be `4`).

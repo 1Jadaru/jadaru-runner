@@ -49,6 +49,7 @@
         <button onclick="initGame()">1. Initialize Game</button>
         <button onclick="startGame()">2. Start Game</button>
         <button onclick="manualMove()">3. Manual Move</button>
+        <button onclick="restartGame()">4. Restart (dispose + init)</button>
         <button onclick="checkState()">Check State</button>
     </div>
     
@@ -132,6 +133,18 @@
             console.log('🐍 Calling moveSnake() manually...');
             game.moveSnake();
             updateStateInfo();
+        };
+
+        // Dispose current game and re-initialize
+        window.restartGame = async function() {
+            if (game) {
+                console.log('♻️ Disposing current game...');
+                game.dispose();
+                const canvas = document.querySelector('canvas');
+                if (canvas) canvas.remove();
+            }
+            await initGame();
+            console.log('👂 Listener count after restart:', game.inputHandler.getListenerCount());
         };
         
         // Test direction
