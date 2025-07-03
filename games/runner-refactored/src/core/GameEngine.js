@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG, STORAGE_KEYS } from './config.js';
+import { CONFIG, STORAGE_KEYS, DEBUG } from './config.js';
 
 /**
  * Core game engine managing the main game loop and state
@@ -283,7 +283,7 @@ export class GameEngine {  constructor() {
     if (this.performanceOptimized) return;
     
     this.performanceOptimized = true;
-    console.log('Optimizing performance...');
+    if (DEBUG) console.log('Optimizing performance...');
     
     // Reduce shadow quality
     this.renderer.shadowMap.enabled = false;

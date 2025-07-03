@@ -1,4 +1,5 @@
 import { GameEngine } from './core/GameEngine.js';
+import { DEBUG } from './core/config.js';
 
 /**
  * Main entry point for the Jadaru Runner game
@@ -15,7 +16,7 @@ class JadaruRunner {
    */
   async init() {
     try {
-      console.log('🎮 Initializing Jadaru Runner (Refactored)...');
+      if (DEBUG) console.log('🎮 Initializing Jadaru Runner (Refactored)...');
       
       // Show loading screen
       this.showLoadingScreen();
@@ -31,7 +32,7 @@ class JadaruRunner {
       this.hideLoadingScreen();
       
       this.isInitialized = true;
-      console.log('✅ Game initialized successfully!');
+      if (DEBUG) console.log('✅ Game initialized successfully!');
       
       // Start the game
       this.startGame();
@@ -51,7 +52,7 @@ class JadaruRunner {
       return;
     }
     
-    console.log('🚀 Starting game...');
+    if (DEBUG) console.log('🚀 Starting game...');
     
     // Resume audio context on user interaction
     const audioSystem = this.gameEngine.getSystem('AudioSystem');
@@ -124,7 +125,7 @@ class JadaruRunner {
       }
     });
     
-    console.log('🔧 Debug keys enabled: Ctrl+R (restart), Ctrl+P (pause), Ctrl+W (wireframe), Ctrl+S (screenshot)');
+    if (DEBUG) console.log('🔧 Debug keys enabled: Ctrl+R (restart), Ctrl+P (pause), Ctrl+W (wireframe), Ctrl+S (screenshot)');
   }
     /**
    * Show loading screen
@@ -219,7 +220,7 @@ class JadaruRunner {
   pauseGame() {
     if (this.gameEngine && this.gameEngine.isRunning) {
       this.gameEngine.isRunning = false;
-      console.log('⏸️ Game paused');
+      if (DEBUG) console.log('⏸️ Game paused');
     }
   }
   
@@ -230,7 +231,7 @@ class JadaruRunner {
     if (this.gameEngine && !this.gameEngine.isRunning && !this.gameEngine.gameOver) {
       this.gameEngine.isRunning = true;
       this.gameEngine.gameLoop();
-      console.log('▶️ Game resumed');
+      if (DEBUG) console.log('▶️ Game resumed');
     }
   }
   
@@ -257,7 +258,7 @@ class JadaruRunner {
   restartGame() {
     if (this.gameEngine) {
       this.gameEngine.restart();
-      console.log('🔄 Game restarted');
+      if (DEBUG) console.log('🔄 Game restarted');
     }
   }
   
@@ -268,7 +269,7 @@ class JadaruRunner {
     const renderSystem = this.gameEngine?.getSystem('RenderSystem');
     if (renderSystem) {
       renderSystem.toggleWireframe();
-      console.log('🔧 Wireframe mode toggled');
+      if (DEBUG) console.log('🔧 Wireframe mode toggled');
     }
   }
   
@@ -279,7 +280,7 @@ class JadaruRunner {
     const renderSystem = this.gameEngine?.getSystem('RenderSystem');
     if (renderSystem) {
       renderSystem.takeScreenshot();
-      console.log('📸 Screenshot taken');
+      if (DEBUG) console.log('📸 Screenshot taken');
     }
   }
   

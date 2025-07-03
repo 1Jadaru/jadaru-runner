@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG } from '../core/config.js';
+import { CONFIG, DEBUG } from '../core/config.js';
 
 /**
  * Collision detection system
@@ -59,7 +59,7 @@ export class CollisionSystem {
    * Handle collision between player and obstacle
    */
   handlePlayerObstacleCollision(player, obstacle) {
-    console.log('Collision detected!');
+    if (DEBUG) console.log('Collision detected!');
     
     // Add collision effect
     this.createCollisionEffect(player.position, obstacle.position);

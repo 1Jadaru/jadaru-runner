@@ -1,3 +1,5 @@
+import { DEBUG } from '../core/config.js';
+
 /**
  * Audio system for sound effects and music
  * Note: This is a placeholder implementation for future audio integration
@@ -21,7 +23,7 @@ export class AudioSystem {
     // Initialize Web Audio API if available
     try {
       this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      console.log('Audio system initialized');
+      if (DEBUG) console.log('Audio system initialized');
     } catch (error) {
       console.warn('Web Audio API not available:', error);
     }
@@ -214,7 +216,7 @@ export class AudioSystem {
    * Start background music (placeholder)
    */
   startBackgroundMusic() {
-    console.log('Background music would start here');
+    if (DEBUG) console.log('Background music would start here');
     // Could generate procedural ambient music
   }
   
@@ -222,7 +224,7 @@ export class AudioSystem {
    * Stop background music
    */
   stopBackgroundMusic() {
-    console.log('Background music stopped');
+    if (DEBUG) console.log('Background music stopped');
   }
   
   /**

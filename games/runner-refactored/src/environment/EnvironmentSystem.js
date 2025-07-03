@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CONFIG } from '../core/config.js';
+import { CONFIG, DEBUG } from '../core/config.js';
 
 /**
  * Environment system managing roads, trails, billboards, and scenery
@@ -13,7 +13,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     this.trailPoints = [];
     this.animationTime = 0;
     this.updateCount = 0;
-    console.log('EnvironmentSystem constructor called');
+    if (DEBUG) console.log('EnvironmentSystem constructor called');
     this.init();
   }
     /**
@@ -35,9 +35,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     this.updateBillboards();
     
     // Debug log every 30 frames (roughly twice per second)
-    if (this.updateCount % 30 === 0) {
-      console.log(`EnvironmentSystem update #${this.updateCount}, billboard animations: ${this.billboardAnimations.length}, billboards: ${this.billboards.length}`);
-    }
+    if (DEBUG && this.updateCount % 30 === 0) console.log(`EnvironmentSystem update #${this.updateCount}, billboard animations: ${this.billboardAnimations.length}, billboards: ${this.billboards.length}`);
   }
   
   /**
@@ -287,7 +285,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     ]);
     screenGeometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
     
-    console.log('UV coordinates corrected:', Array.from(uvs));
+    if (DEBUG) console.log('UV coordinates corrected:', Array.from(uvs));
     
     const { texture, canvas, context } = this.createAnimatedTexture();
     
@@ -319,7 +317,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
       lastUpdate: 0
     };
     this.billboardAnimations.push(animationData);
-    console.log(`Created billboard animation: ${animationType}, total: ${this.billboardAnimations.length}`);
+    if (DEBUG) console.log(`Created billboard animation: ${animationType}, total: ${this.billboardAnimations.length}`);
       // NEON TRIM REMOVED - was causing color overlay issue
     // The overlapping neon geometry was interfering with the screen texture
     // Original issue: greenish overlay on left half of billboard    // Position the group
@@ -589,7 +587,7 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     texture.flipY = false; // Ensure proper orientation
     texture.needsUpdate = true;
     
-    console.log('Created animated texture canvas:', canvas.width, 'x', canvas.height, 'flipY:', texture.flipY);
+    if (DEBUG) console.log('Created animated texture canvas:', canvas.width, 'x', canvas.height, 'flipY:', texture.flipY);
     
     return { texture, canvas, context };
   }/**
@@ -603,14 +601,10 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     }
     
     // Debug log every 120 frames (roughly every 2 seconds)
-    if (this.updateCount % 120 === 0) {
-      console.log('Updating billboard animations, count:', this.billboardAnimations.length, 'time:', this.animationTime.toFixed(2));
-    }
+    if (DEBUG && this.updateCount % 120 === 0) console.log('Updating billboard animations, count:', this.billboardAnimations.length, 'time:', this.animationTime.toFixed(2));
       this.billboardAnimations.forEach((billboard, index) => {
       try {        // Debug: Log animation details every 120 frames
-        if (this.updateCount % 120 === 0) {
-          console.log(`Billboard ${index}: type=${billboard.type}, canvas=${billboard.canvas.width}x${billboard.canvas.height}, texture=${billboard.texture ? 'exists' : 'missing'}, message=${billboard.message}`);
-        }
+        if (DEBUG && this.updateCount % 120 === 0) console.log(`Billboard ${index}: type=${billboard.type}, canvas=${billboard.canvas.width}x${billboard.canvas.height}, texture=${billboard.texture ? 'exists' : 'missing'}, message=${billboard.message}`);
         
         // Use the proper animation system
         this.renderBillboardContent(billboard);
@@ -638,9 +632,8 @@ export class EnvironmentSystem {  constructor(gameEngine) {
     const time = this.animationTime + phase;
     
     // Debug: Log that this method is being called
-    if (this.updateCount % 180 === 0) {
-      console.log(`renderBillboardContent called: type=${type}, time=${time.toFixed(2)}`);
-    }    // Clear canvas completely
+    if (DEBUG && this.updateCount % 180 === 0) console.log(`renderBillboardContent called: type=${type}, time=${time.toFixed(2)}`);
+    // Clear canvas completely
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#000011';
     context.fillRect(0, 0, canvas.width, canvas.height);
