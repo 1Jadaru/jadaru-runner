@@ -424,14 +424,6 @@ export class Snake {
     return [...this.body];
   }
 
-  /**
-   * Reset snake to initial state
-   */
-  reset() {
-    this.disposeMeshes();
-    this.direction = { x: 1, y: 0 };
-    this.init();
-  }
 
   /**
    * Create death effect animation
@@ -484,18 +476,21 @@ export class Snake {
    * Reset snake to initial state
    */
   reset() {
-    // Reset direction
+    // Dispose of existing meshes
+    this.disposeMeshes();
+
+    // Reset direction and state
     this.direction = { x: 1, y: 0 };
     this.growing = false;
-    
-    // Reset body to initial state
+
+    // Rebuild starting body
     const center = this.grid.getCenterPosition();
     this.body = [
       { x: center.x, y: center.y },
       { x: center.x - 1, y: center.y },
       { x: center.x - 2, y: center.y }
     ];
-    
+
     // Recreate meshes
     this.createMeshes();
   }
