@@ -159,6 +159,9 @@ class SnakeGameApp {
     // Setup virtual controls toggle
     this.setupVirtualControlsToggle();
     
+    // Setup game mode buttons
+    this.setupGameModeButtons();
+    
     // Setup start game button
     this.setupStartGameButton();
     
@@ -369,6 +372,69 @@ class SnakeGameApp {
     if (overlay) {
       overlay.classList.add('hidden');
     }
+  }
+
+  setupGameModeButtons() {
+    const modeButtons = document.querySelectorAll('.mode-btn');
+    
+    modeButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const mode = button.getAttribute('data-mode');
+        
+        // Update active button
+        modeButtons.forEach(btn => btn.classList.remove('active'));
+        button.classList.add('active');
+        
+        // Change game mode
+        if (this.game) {
+          this.game.changeGameMode(mode);
+        }
+        
+        // Update button text based on mode
+        const modeDescriptions = {
+          classic: 'Classic Snake gameplay with normal speed',
+          speed: 'Fast-paced gameplay with increased speed',
+          survival: 'Slower speed but more challenging obstacles'
+        };
+        
+        // Show mode description
+        this.showModeDescription(modeDescriptions[mode] || '');
+      });
+    });
+  }
+  
+  showModeDescription(description) {
+    // Create or update description element
+    let descElement = document.getElementById('mode-description');
+    if (!descElement) {
+      descElement = document.createElement('div');
+      descElement.id = 'mode-description';
+      descElement.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(0, 0, 0, 0.9);
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        z-index: 1000;
+        font-size: 1rem;
+        text-align: center;
+        max-width: 300px;
+        backdrop-filter: blur(10px);
+      `;
+      document.body.appendChild(descElement);
+    }
+    
+    descElement.textContent = description;
+    
+    // Hide after 2 seconds
+    setTimeout(() => {
+      if (descElement.parentNode) {
+        descElement.parentNode.removeChild(descElement);
+      }
+    }, 2000);
   }
 
   setupVirtualControlsToggle() {

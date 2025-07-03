@@ -112,9 +112,10 @@ export class Food {
   /**
    * Spawn food at a random position
    * @param {Array} excludePositions - Positions to avoid (snake body)
+   * @param {Array} powerUpPositions - Power-up positions to avoid
    */
-  spawn(excludePositions = []) {
-    this.position = this.grid.getRandomPosition(excludePositions);
+  spawn(excludePositions = [], powerUpPositions = []) {
+    this.position = this.grid.getRandomPosition([...excludePositions, ...powerUpPositions]);
     this.updateMeshPosition();
   }
 

@@ -237,6 +237,22 @@ body {
   color: #667eea;
 }
 
+.combo-card {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+  color: white;
+  animation: pulse 0.6s ease-in-out;
+}
+
+.combo-card .stat-label {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.combo-card .stat-value {
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
 /* Canvas Container */
 .canvas-container {
   position: relative;
@@ -458,8 +474,67 @@ body {
 
 .control-options {
   display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   justify-content: center;
+  align-items: center;
+}
+
+.game-mode-selector {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.game-mode-selector h4 {
+  color: #4a5568;
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.mode-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #4a5568;
+  border: 2px solid rgba(74, 85, 104, 0.2);
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mode-btn:hover {
+  background: rgba(102, 126, 234, 0.1);
+  border-color: rgba(102, 126, 234, 0.3);
+  transform: translateY(-2px);
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: transparent;
+}
+
+.mode-btn.active:hover {
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+}
+
+.control-toggles {
+  display: flex;
   gap: 1rem;
+  justify-content: center;
   flex-wrap: wrap;
 }
 

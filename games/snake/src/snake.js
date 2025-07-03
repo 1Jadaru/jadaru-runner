@@ -12,7 +12,10 @@ export class Snake {
     this.meshes = [];
     this.materials = [];
     this.growing = false; // Flag for when snake should grow
-      this.init();
+    this.ghostMode = false; // Ghost mode for power-ups
+    this.originalMaterials = []; // Store original materials for ghost mode
+    this.animationSpeed = 1.0; // Animation speed multiplier
+    this.init();
   }
 
   init() {
@@ -52,9 +55,25 @@ export class Snake {
     bodyMaterial.emissiveColor = new BABYLON.Color3(0.02, 0.1, 0.02);
     bodyMaterial.specularColor = new BABYLON.Color3(0.2, 0.2, 0.2);
 
+    // Ghost materials (semi-transparent)
+    const ghostHeadMaterial = new BABYLON.StandardMaterial('ghostSnakeHead', this.scene);
+    ghostHeadMaterial.diffuseColor = new BABYLON.Color3(0.5, 0, 0.5);
+    ghostHeadMaterial.emissiveColor = new BABYLON.Color3(0.2, 0, 0.2);
+    ghostHeadMaterial.specularColor = new BABYLON.Color3(0.5, 0.5, 0.5);
+    ghostHeadMaterial.alpha = 0.7;
+
+    const ghostBodyMaterial = new BABYLON.StandardMaterial('ghostSnakeBody', this.scene);
+    ghostBodyMaterial.diffuseColor = new BABYLON.Color3(0.3, 0, 0.3);
+    ghostBodyMaterial.emissiveColor = new BABYLON.Color3(0.1, 0, 0.1);
+    ghostBodyMaterial.specularColor = new BABYLON.Color3(0.4, 0.4, 0.4);
+    ghostBodyMaterial.alpha = 0.6;
+
     this.materials = {
       head: headMaterial,
-      body: bodyMaterial    };
+      body: bodyMaterial,
+      ghostHead: ghostHeadMaterial,
+      ghostBody: ghostBodyMaterial
+    };
   }
 
   createSegmentMesh(index) {
@@ -68,17 +87,28 @@ export class Snake {
       depth: this.grid.cellSize * 0.8
     }, this.scene);
 
-    // Apply material
-    mesh.material = isHead ? this.materials.head : this.materials.body;
+    // Apply material based on ghost mode
+    const material = this.getMaterialForSegment(index);
+    mesh.material = material;
     
     // Position the mesh
     const segment = this.body[index];
-    const worldPos = this.grid.gridToWorld(segment.x, segment.y);    mesh.position.x = worldPos.x;
+    const worldPos = this.grid.gridToWorld(segment.x, segment.y);
+    mesh.position.x = worldPos.x;
     mesh.position.y = this.grid.cellSize * 0.5; // Lift slightly off ground
     mesh.position.z = worldPos.z;
 
     this.meshes[index] = mesh;
     return mesh;
+  }
+  
+  getMaterialForSegment(index) {
+    const isHead = index === 0;
+    if (this.ghostMode) {
+      return isHead ? this.materials.ghostHead : this.materials.ghostBody;
+    } else {
+      return isHead ? this.materials.head : this.materials.body;
+    }
   }
 
   addEyesToHead(headMesh) {
@@ -169,7 +199,8 @@ export class Snake {
   }  /**
    * Update snake direction
    * @param {Object} newDirection - New direction {x, y}
-   */  setDirection(newDirection) {
+   */
+  setDirection(newDirection) {
     // Prevent moving in opposite direction
     const isOpposite = 
       newDirection.x === -this.direction.x && newDirection.y === -this.direction.y;
@@ -188,6 +219,75 @@ export class Snake {
         }
       }
     }
+  }
+  
+  /**
+   * Set ghost mode for power-ups
+   * @param {boolean} enabled - Whether ghost mode is enabled
+   */
+  setGhostMode(enabled) {
+    this.ghostMode = enabled;
+    
+    // Update all mesh materials
+    this.meshes.forEach((mesh, index) => {
+      if (mesh) {
+        mesh.material = this.getMaterialForSegment(index);
+      }
+    });
+    
+    // Add ghost effect animation
+    if (enabled) {
+      this.addGhostEffect();
+    } else {
+      this.removeGhostEffect();
+    }
+  }
+  
+  /**
+   * Add ghost effect animation
+   */
+  addGhostEffect() {
+    this.meshes.forEach((mesh, index) => {
+      if (mesh) {
+        // Add floating animation
+        const floatAnimation = new BABYLON.Animation(
+          `ghostFloat_${index}`,
+          'position.y',
+          30,
+          BABYLON.Animation.ANIMATIONTYPE_FLOAT,
+          BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE
+        );
+        
+        const baseY = this.grid.cellSize * 0.5;
+        const floatRange = 0.3;
+        
+        const keyFrames = [];
+        keyFrames.push({ frame: 0, value: baseY });
+        keyFrames.push({ frame: 15, value: baseY + floatRange });
+        keyFrames.push({ frame: 30, value: baseY });
+        
+        floatAnimation.setKeys(keyFrames);
+        mesh.animations.push(floatAnimation);
+        this.scene.beginAnimation(mesh, 0, 30, true);
+      }
+    });
+  }
+  
+  /**
+   * Remove ghost effect animation
+   */
+  removeGhostEffect() {
+    this.meshes.forEach((mesh, index) => {
+      if (mesh) {
+        // Stop ghost animations
+        this.scene.stopAnimation(mesh, `ghostFloat_${index}`);
+        
+        // Reset position
+        const segment = this.body[index];
+        const worldPos = this.grid.gridToWorld(segment.x, segment.y);
+        mesh.position.y = this.grid.cellSize * 0.5;
+      }
+    });
   }
 
   /**
@@ -262,7 +362,13 @@ export class Snake {
   /**
    * Check if snake collides with itself
    * @returns {boolean} True if self-collision occurred
-   */  checkSelfCollision() {
+   */
+  checkSelfCollision() {
+    // Ghost mode allows passing through self
+    if (this.ghostMode) {
+      return false;
+    }
+    
     if (!this.body || this.body.length < 2) {
       return false; // Need at least 2 segments for self-collision
     }
@@ -271,7 +377,8 @@ export class Snake {
     if (!head) {
       return false;
     }
-      for (let i = 1; i < this.body.length; i++) {
+    
+    for (let i = 1; i < this.body.length; i++) {
       if (head.x === this.body[i].x && head.y === this.body[i].y) {
         return true;
       }

@@ -64,6 +64,10 @@
             <div class="stat-label">Level</div>
             <div class="stat-value" id="level">1</div>
           </div>
+          <div class="stat-card combo-card" id="combo" style="display: none;">
+            <div class="stat-label">Combo</div>
+            <div class="stat-value">1x</div>
+          </div>
         </div>
       </div>
       
@@ -118,14 +122,33 @@
             </div>
           </div>
           <div class="control-options">
-            <button id="toggle-virtual-controls" class="toggle-controls-btn">
-              <span class="btn-icon">📱</span>
-              <span class="btn-text">Show Virtual Controls</span>
-            </button>
-            <button id="toggle-sound" class="toggle-sound-btn">
-              <span class="btn-icon">🔊</span>
-              <span class="btn-text">Sound On</span>
-            </button>
+            <div class="game-mode-selector">
+              <h4>Game Mode</h4>
+              <div class="mode-buttons">
+                <button class="mode-btn active" data-mode="classic">
+                  <span class="btn-icon">🐍</span>
+                  <span class="btn-text">Classic</span>
+                </button>
+                <button class="mode-btn" data-mode="speed">
+                  <span class="btn-icon">⚡</span>
+                  <span class="btn-text">Speed</span>
+                </button>
+                <button class="mode-btn" data-mode="survival">
+                  <span class="btn-icon">💀</span>
+                  <span class="btn-text">Survival</span>
+                </button>
+              </div>
+            </div>
+            <div class="control-toggles">
+              <button id="toggle-virtual-controls" class="toggle-controls-btn">
+                <span class="btn-icon">📱</span>
+                <span class="btn-text">Show Virtual Controls</span>
+              </button>
+              <button id="toggle-sound" class="toggle-sound-btn">
+                <span class="btn-icon">🔊</span>
+                <span class="btn-text">Sound On</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

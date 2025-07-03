@@ -15,24 +15,47 @@ export class Game {
     
     // Game state
     this.state = 'waiting'; // 'waiting', 'playing', 'paused', 'gameOver'
+    this.gameMode = 'classic'; // 'classic', 'speed', 'survival'
     this.score = 0;
     this.highScore = parseInt(localStorage.getItem('snakeHighScore')) || 0;
-      // Game timing
+    this.level = 1;
+    this.combo = 0;
+    this.maxCombo = 0;
+    this.powerUpActive = false;
+    this.powerUpType = null;
+    this.powerUpTimer = 0;
+    
+    // Game timing
     this.moveInterval = 200; // milliseconds between moves
     this.lastMoveTime = 0;
     this.deltaTimeAccumulator = 0;
+    this.gameTime = 0;
     
     // Game objects
     this.grid = new Grid(400, 400, 20); // Smaller grid for easier testing
     this.snake = null;
     this.food = null;
+    this.powerUps = [];
     this.inputHandler = null;
     
     // UI elements
     this.scoreElement = document.getElementById('score');
     this.highScoreElement = document.getElementById('high-score');
+    this.levelElement = document.getElementById('level');
+    this.comboElement = document.getElementById('combo');
     this.gameOverlay = document.getElementById('game-overlay');
     this.gameMessage = document.getElementById('game-message');
+    
+    // Audio system
+    this.audioContext = null;
+    this.sounds = {};
+    this.musicEnabled = true;
+    this.soundEnabled = true;
+    
+    // Performance monitoring
+    this.fps = 0;
+    this.frameCount = 0;
+    this.lastFpsUpdate = 0;
     
     this.init();
   }
@@ -41,7 +64,9 @@ export class Game {
     this.setupScene();
     this.createGameObjects();
     this.setupInput();
-    this.updateUI();    this.setupGameLoop();
+    this.setupAudio();
+    this.updateUI();
+    this.setupGameLoop();
   }
 
   setupScene() {
@@ -53,7 +78,8 @@ export class Game {
       height: this.grid.height
     }, this.scene);
 
-    const groundMaterial = new BABYLON.StandardMaterial('groundMaterial', this.scene);    groundMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.2);
+    const groundMaterial = new BABYLON.StandardMaterial('groundMaterial', this.scene);
+    groundMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.2);
     groundMaterial.specularColor = new BABYLON.Color3(0, 0, 0);
     ground.material = groundMaterial;
     ground.position.y = 0; // Make sure it's at ground level
@@ -69,6 +95,11 @@ export class Game {
     const dirLight = new BABYLON.DirectionalLight('dirLight', new BABYLON.Vector3(-1, -1, -1), this.scene);
     dirLight.position = new BABYLON.Vector3(20, 40, 20);
     dirLight.intensity = 0.5;
+    
+    // Add point light for dynamic lighting
+    this.pointLight = new BABYLON.PointLight('pointLight', new BABYLON.Vector3(0, 50, 0), this.scene);
+    this.pointLight.intensity = 0.3;
+    this.pointLight.diffuse = new BABYLON.Color3(1, 0.8, 0.6);
   }
 
   createGridLines() {
@@ -116,19 +147,93 @@ export class Game {
     
     this.inputHandler.onInput('start', () => this.handleStartInput());
     this.inputHandler.onInput('pause', () => this.handlePauseInput());
+    this.inputHandler.onInput('mode', (mode) => this.changeGameMode(mode));
   }
+  
+  setupAudio() {
+    // Initialize Web Audio API
+    if (typeof AudioContext !== 'undefined' || typeof webkitAudioContext !== 'undefined') {
+      this.audioContext = new (AudioContext || webkitAudioContext)();
+      this.loadSounds();
+    }
+  }
+  
+  loadSounds() {
+    // Create simple sound effects using Web Audio API
+    this.createSound('eat', 200, 800, 'sine');
+    this.createSound('powerup', 150, 1200, 'square');
+    this.createSound('gameover', 500, 200, 'sawtooth');
+    this.createSound('levelup', 300, 1000, 'triangle');
+  }
+  
+  createSound(name, duration, frequency, type) {
+    if (!this.audioContext) return;
+    
+    this.sounds[name] = () => {
+      const oscillator = this.audioContext.createOscillator();
+      const gainNode = this.audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(this.audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(frequency, this.audioContext.currentTime);
+      oscillator.type = type;
+      
+      gainNode.gain.setValueAtTime(0.1, this.audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration / 1000);
+      
+      oscillator.start(this.audioContext.currentTime);
+      oscillator.stop(this.audioContext.currentTime + duration / 1000);
+    };
+  }
+  
+  playSound(soundName) {
+    if (this.soundEnabled && this.sounds[soundName]) {
+      this.sounds[soundName]();
+    }
+  }
+  
   setupGameLoop() {
     this.scene.onBeforeRenderObservable.add((scene, eventState) => {
       const deltaTime = scene.getEngine().getDeltaTime();
       this.update(deltaTime);
+      this.updatePerformance(deltaTime);
     });
   }
+  
+  updatePerformance(deltaTime) {
+    this.frameCount++;
+    this.lastFpsUpdate += deltaTime;
+    
+    if (this.lastFpsUpdate >= 1000) {
+      this.fps = Math.round(this.frameCount * 1000 / this.lastFpsUpdate);
+      this.frameCount = 0;
+      this.lastFpsUpdate = 0;
+      
+      // Adaptive quality based on FPS
+      if (this.fps < 30 && this.scene.postProcesses.length > 0) {
+        this.scene.postProcesses[0].enabled = false;
+      } else if (this.fps > 50 && this.scene.postProcesses.length > 0) {
+        this.scene.postProcesses[0].enabled = true;
+      }
+    }
+  }
+  
   update(deltaTime) {
     if (this.state !== 'playing') {
       return;
     }
 
+    this.gameTime += deltaTime;
     this.deltaTimeAccumulator += deltaTime;
+    
+    // Update power-up timer
+    if (this.powerUpActive) {
+      this.powerUpTimer -= deltaTime;
+      if (this.powerUpTimer <= 0) {
+        this.deactivatePowerUp();
+      }
+    }
 
     // Move snake at fixed intervals
     if (this.deltaTimeAccumulator >= this.moveInterval) {
@@ -136,6 +241,7 @@ export class Game {
       this.moveSnake();
     }
   }
+  
   moveSnake() {
     // Get input direction
     const inputDirection = this.inputHandler.getNextDirection();
@@ -144,10 +250,15 @@ export class Game {
     }
 
     // Check food consumption before moving
-    const shouldGrow = this.checkFoodConsumption();
-    if (shouldGrow) {
-      this.snake.grow(); // Tell snake to grow on next move
-      this.consumeFood();
+    const foodConsumed = this.checkFoodConsumption();
+    if (foodConsumed) {
+      this.handleFoodConsumption();
+    }
+    
+    // Check power-up consumption
+    const powerUpConsumed = this.checkPowerUpConsumption();
+    if (powerUpConsumed) {
+      this.handlePowerUpConsumption(powerUpConsumed);
     }
 
     // Move snake (it will handle tail removal internally based on growing flag)
@@ -158,39 +269,261 @@ export class Game {
       this.gameOver();
       return;
     }
+    
+    // Update combo timer
+    if (this.combo > 0) {
+      this.combo--;
+      if (this.combo === 0) {
+        this.updateComboDisplay();
+      }
+    }
   }
+  
   checkCollisions() {
     const wallCollision = this.snake.checkWallCollision();
     const selfCollision = this.snake.checkSelfCollision();
     
     return wallCollision || selfCollision;
   }
+  
   checkFoodConsumption() {
     const headPos = this.snake.getHeadPosition();
     if (!headPos) {
-      return false; // No consumption if no valid head position
+      return false;
     }
     return this.food.isAtPosition(headPos);
   }
-  consumeFood() {
+  
+  checkPowerUpConsumption() {
+    const headPos = this.snake.getHeadPosition();
+    if (!headPos) {
+      return false;
+    }
+    
+    for (let i = this.powerUps.length - 1; i >= 0; i--) {
+      const powerUp = this.powerUps[i];
+      if (powerUp.isAtPosition(headPos)) {
+        this.powerUps.splice(i, 1);
+        return powerUp;
+      }
+    }
+    return false;
+  }
+  
+  handleFoodConsumption() {
     // Create eat effect
     this.food.createEatEffect();
     
-    // Increase score
-    this.score += 10;
+    // Increase combo
+    this.combo++;
+    this.maxCombo = Math.max(this.maxCombo, this.combo);
+    
+    // Calculate score with combo multiplier
+    const baseScore = 10;
+    const comboMultiplier = 1 + (this.combo - 1) * 0.5;
+    const scoreGain = Math.round(baseScore * comboMultiplier);
+    
+    this.score += scoreGain;
     this.updateScore();
+    this.updateComboDisplay();
+    
+    // Play sound
+    this.playSound('eat');
     
     // Spawn new food
+    this.snake.grow();
     this.spawnFood();
     
-    // Increase speed slightly
-    this.moveInterval = Math.max(80, this.moveInterval - 2);
+    // Check for level up
+    this.checkLevelUp();
+    
+    // Randomly spawn power-up
+    if (Math.random() < 0.1) { // 10% chance
+      this.spawnPowerUp();
+    }
+    
+    // Increase speed based on game mode
+    this.updateSpeed();
+  }
+  
+  handlePowerUpConsumption(powerUp) {
+    this.activatePowerUp(powerUp.type);
+    this.playSound('powerup');
+    
+    // Create power-up effect
+    this.createPowerUpEffect(powerUp.position);
+  }
+  
+  activatePowerUp(type) {
+    this.powerUpActive = true;
+    this.powerUpType = type;
+    this.powerUpTimer = 5000; // 5 seconds
+    
+    switch (type) {
+      case 'speed':
+        this.moveInterval *= 0.5;
+        break;
+      case 'slow':
+        this.moveInterval *= 2;
+        break;
+      case 'ghost':
+        this.snake.setGhostMode(true);
+        break;
+      case 'double':
+        // Double points for a duration
+        break;
+    }
+  }
+  
+  deactivatePowerUp() {
+    this.powerUpActive = false;
+    this.powerUpType = null;
+    
+    // Reset to normal speed
+    this.updateSpeed();
+    
+    // Disable ghost mode
+    if (this.snake) {
+      this.snake.setGhostMode(false);
+    }
+  }
+  
+  createPowerUpEffect(position) {
+    // Create particle effect at power-up position
+    const particleSystem = new BABYLON.ParticleSystem('powerUpEffect', 50, this.scene);
+    
+    particleSystem.particleTexture = new BABYLON.Texture('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==');
+    
+    particleSystem.emitter = new BABYLON.Vector3(
+      position.x * this.grid.cellSize,
+      5,
+      position.z * this.grid.cellSize
+    );
+    
+    particleSystem.minEmitBox = new BABYLON.Vector3(-1, -1, -1);
+    particleSystem.maxEmitBox = new BABYLON.Vector3(1, 1, 1);
+    
+    particleSystem.color1 = new BABYLON.Color4(1, 0, 0, 1);
+    particleSystem.color2 = new BABYLON.Color4(0, 0, 1, 1);
+    particleSystem.colorDead = new BABYLON.Color4(0, 0, 0, 0);
+    
+    particleSystem.minSize = 0.1;
+    particleSystem.maxSize = 0.5;
+    
+    particleSystem.minLifeTime = 0.3;
+    particleSystem.maxLifeTime = 0.8;
+    
+    particleSystem.emitRate = 100;
+    particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+    
+    particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+    
+    particleSystem.direction1 = new BABYLON.Vector3(-2, -2, -2);
+    particleSystem.direction2 = new BABYLON.Vector3(2, 2, 2);
+    
+    particleSystem.minEmitPower = 1;
+    particleSystem.maxEmitPower = 3;
+    particleSystem.updateSpeed = 0.005;
+    
+    particleSystem.start();
+    
+    // Stop after 1 second
+    setTimeout(() => {
+      particleSystem.stop();
+    }, 1000);
+  }
+  
+  spawnPowerUp() {
+    const types = ['speed', 'slow', 'ghost', 'double'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    
+    const snakePositions = this.snake.getBodyPositions();
+    const foodPosition = this.food.getPosition();
+    const powerUpPositions = this.powerUps.map(p => p.getPosition());
+    
+    const availablePositions = [];
+    for (let x = 0; x < this.grid.cols; x++) {
+      for (let z = 0; z < this.grid.rows; z++) {
+        const pos = { x, z };
+        if (!snakePositions.some(p => p.x === pos.x && p.z === pos.z) &&
+            !(foodPosition.x === pos.x && foodPosition.z === pos.z) &&
+            !powerUpPositions.some(p => p.x === pos.x && p.z === pos.z)) {
+          availablePositions.push(pos);
+        }
+      }
+    }
+    
+    if (availablePositions.length > 0) {
+      const position = availablePositions[Math.floor(Math.random() * availablePositions.length)];
+      const powerUp = new PowerUp(this.scene, this.grid, position, type);
+      this.powerUps.push(powerUp);
+    }
+  }
+  
+  checkLevelUp() {
+    const newLevel = Math.floor(this.score / 100) + 1;
+    if (newLevel > this.level) {
+      this.level = newLevel;
+      this.updateLevel();
+      this.playSound('levelup');
+      this.createLevelUpEffect();
+    }
+  }
+  
+  createLevelUpEffect() {
+    // Create screen flash effect
+    const flashMaterial = new BABYLON.StandardMaterial('flash', this.scene);
+    flashMaterial.emissiveColor = new BABYLON.Color3(1, 1, 1);
+    flashMaterial.alpha = 0.3;
+    
+    const flashPlane = BABYLON.MeshBuilder.CreatePlane('flash', { width: 1000, height: 1000 }, this.scene);
+    flashPlane.material = flashMaterial;
+    flashPlane.position.y = 100;
+    
+    // Animate flash
+    const flashAnimation = new BABYLON.Animation('flashAnim', 'material.alpha', 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT);
+    
+    const keyFrames = [];
+    keyFrames.push({ frame: 0, value: 0.3 });
+    keyFrames.push({ frame: 15, value: 0 });
+    
+    flashAnimation.setKeys(keyFrames);
+    flashPlane.animations = [flashAnimation];
+    
+    this.scene.beginAnimation(flashPlane, 0, 15, false, 1, () => {
+      flashPlane.dispose();
+    });
+  }
+  
+  updateSpeed() {
+    const baseSpeed = 200;
+    const levelSpeedReduction = (this.level - 1) * 5;
+    const modeMultiplier = this.getModeSpeedMultiplier();
+    
+    this.moveInterval = Math.max(50, baseSpeed - levelSpeedReduction) * modeMultiplier;
+  }
+  
+  getModeSpeedMultiplier() {
+    switch (this.gameMode) {
+      case 'speed': return 0.7;
+      case 'survival': return 1.2;
+      default: return 1.0;
+    }
+  }
+  
+  changeGameMode(mode) {
+    this.gameMode = mode;
+    this.updateSpeed();
+    this.updateUI();
   }
 
   spawnFood() {
     const snakePositions = this.snake.getBodyPositions();
-    this.food.spawn(snakePositions);
-  }  handleStartInput() {
+    const powerUpPositions = this.powerUps.map(p => p.getPosition());
+    this.food.spawn(snakePositions, powerUpPositions);
+  }
+
+  handleStartInput() {
     switch (this.state) {
       case 'waiting':
         this.startGame();
@@ -213,15 +546,17 @@ export class Game {
     } else if (this.state === 'paused') {
       this.resumeGame();
     }
-  }  startGame() {
+  }
+
+  startGame() {
     this.state = 'playing';
     this.hideOverlay();
-    this.inputHandler.reset();
+    this.updateUI();
   }
 
   pauseGame() {
     this.state = 'paused';
-    this.showOverlay('Game Paused', 'Press SPACE or P to resume');
+    this.showOverlay('Game Paused', 'Press SPACE to resume');
   }
 
   resumeGame() {
@@ -231,31 +566,32 @@ export class Game {
 
   gameOver() {
     this.state = 'gameOver';
-    this.snake.createDeathEffect();
-    
-    // Update high score
-    if (this.score > this.highScore) {
-      this.highScore = this.score;
-      localStorage.setItem('snakeHighScore', this.highScore.toString());
-      this.updateHighScore();
-      this.showOverlay('New High Score!', `Score: ${this.score}\\nPress SPACE to play again`);
-    } else {
-      this.showOverlay('Game Over', `Score: ${this.score}\\nPress SPACE to play again`);
-    }
+    this.playSound('gameover');
+    this.updateHighScore();
+    this.showOverlay('Game Over!', `Final Score: ${this.score}\nHigh Score: ${this.highScore}\nMax Combo: ${this.maxCombo}`);
   }
 
   restartGame() {
     // Reset game state
     this.score = 0;
-    this.moveInterval = 200;
-    this.deltaTimeAccumulator = 0;
+    this.level = 1;
+    this.combo = 0;
+    this.maxCombo = 0;
+    this.gameTime = 0;
+    this.powerUpActive = false;
+    this.powerUpType = null;
+    this.powerUpTimer = 0;
     
-    // Reset game objects
+    // Clear power-ups
+    this.powerUps.forEach(powerUp => powerUp.dispose());
+    this.powerUps = [];
+    
+    // Reset snake and food
     this.snake.reset();
     this.spawnFood();
     
-    // Update UI
-    this.updateScore();
+    // Reset speed
+    this.updateSpeed();
     
     // Start new game
     this.startGame();
@@ -271,20 +607,69 @@ export class Game {
     }
   }
 
+  updateLevel() {
+    if (this.levelElement) {
+      this.levelElement.textContent = this.level;
+      this.levelElement.classList.add('level-up');
+      setTimeout(() => {
+        this.levelElement.classList.remove('level-up');
+      }, 1000);
+    }
+  }
+  
+  updateComboDisplay() {
+    if (this.comboElement) {
+      if (this.combo > 1) {
+        this.comboElement.textContent = `${this.combo}x Combo!`;
+        this.comboElement.style.display = 'block';
+      } else {
+        this.comboElement.style.display = 'none';
+      }
+    }
+  }
+
   updateHighScore() {
-    if (this.highScoreElement) {
-      this.highScoreElement.textContent = this.highScore;
+    if (this.score > this.highScore) {
+      this.highScore = this.score;
+      localStorage.setItem('snakeHighScore', this.highScore.toString());
+      if (this.highScoreElement) {
+        this.highScoreElement.textContent = this.highScore;
+      }
     }
   }
 
   updateUI() {
     this.updateScore();
+    this.updateLevel();
+    this.updateComboDisplay();
     this.updateHighScore();
   }
 
   showOverlay(title, message) {
     if (this.gameOverlay && this.gameMessage) {
-      this.gameMessage.innerHTML = `<h2>${title}</h2><p>${message.replace('\\n', '<br>')}</p>`;
+      this.gameMessage.innerHTML = `
+        <div class="message-icon">🎮</div>
+        <h2>${title}</h2>
+        <p>${message}</p>
+        <div class="game-stats-summary">
+          <div class="stat-item">
+            <span class="stat-label">Score:</span>
+            <span class="stat-value">${this.score}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Level:</span>
+            <span class="stat-value">${this.level}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">Max Combo:</span>
+            <span class="stat-value">${this.maxCombo}</span>
+          </div>
+        </div>
+        <button class="start-game-btn" id="start-game-btn">
+          <span class="btn-icon">🚀</span>
+          <span>Play Again</span>
+        </button>
+      `;
       this.gameOverlay.classList.remove('hidden');
     }
   }
@@ -295,35 +680,101 @@ export class Game {
     }
   }
 
-  /**
-   * Get current game statistics
-   * @returns {Object} Game stats
-   */
   getStats() {
     return {
       score: this.score,
       highScore: this.highScore,
-      snakeLength: this.snake ? this.snake.getBodyPositions().length : 0,
-      gameSpeed: 200 - this.moveInterval + 200,
-      state: this.state
+      level: this.level,
+      combo: this.combo,
+      maxCombo: this.maxCombo,
+      gameTime: this.gameTime,
+      fps: this.fps,
+      gameMode: this.gameMode,
+      powerUpActive: this.powerUpActive,
+      powerUpType: this.powerUpType
     };
   }
 
-  /**
-   * Dispose of game resources
-   */
   dispose() {
-    if (this.snake) {
-      this.snake.dispose();
-    }
+    // Clean up power-ups
+    this.powerUps.forEach(powerUp => powerUp.dispose());
+    this.powerUps = [];
     
-    if (this.food) {
-      this.food.dispose();
-    }
+    // Clean up game objects
+    if (this.snake) this.snake.dispose();
+    if (this.food) this.food.dispose();
+    if (this.inputHandler) this.inputHandler.dispose();
     
-    // Remove event listeners
-    if (this.inputHandler) {
-      // InputHandler manages its own cleanup
+    // Clean up audio
+    if (this.audioContext) {
+      this.audioContext.close();
+    }
+  }
+}
+
+// PowerUp class for special items
+class PowerUp {
+  constructor(scene, grid, position, type) {
+    this.scene = scene;
+    this.grid = grid;
+    this.position = position;
+    this.type = type;
+    this.mesh = null;
+    
+    this.createMesh();
+  }
+  
+  createMesh() {
+    const colors = {
+      speed: new BABYLON.Color3(1, 0, 0),    // Red
+      slow: new BABYLON.Color3(0, 0, 1),     // Blue
+      ghost: new BABYLON.Color3(0.5, 0, 0.5), // Purple
+      double: new BABYLON.Color3(1, 1, 0)    // Yellow
+    };
+    
+    this.mesh = BABYLON.MeshBuilder.CreateBox(`powerUp_${this.type}`, {
+      width: this.grid.cellSize * 0.8,
+      height: this.grid.cellSize * 0.8,
+      depth: this.grid.cellSize * 0.8
+    }, this.scene);
+    
+    const material = new BABYLON.StandardMaterial(`powerUpMaterial_${this.type}`, this.scene);
+    material.diffuseColor = colors[this.type];
+    material.emissiveColor = colors[this.type].scale(0.3);
+    material.specularColor = new BABYLON.Color3(1, 1, 1);
+    
+    this.mesh.material = material;
+    this.mesh.position = new BABYLON.Vector3(
+      this.position.x * this.grid.cellSize,
+      this.grid.cellSize * 0.5,
+      this.position.z * this.grid.cellSize
+    );
+    
+    // Add rotation animation
+    this.mesh.rotation.y = 0;
+    const rotationAnimation = new BABYLON.Animation('powerUpRotation', 'rotation.y', 30, BABYLON.Animation.ANIMATIONTYPE_FLOAT, BABYLON.Animation.ANIMATIONLOOPMODE_CYCLE);
+    
+    const keyFrames = [];
+    keyFrames.push({ frame: 0, value: 0 });
+    keyFrames.push({ frame: 30, value: Math.PI * 2 });
+    
+    rotationAnimation.setKeys(keyFrames);
+    this.mesh.animations = [rotationAnimation];
+    
+    this.scene.beginAnimation(this.mesh, 0, 30, true);
+  }
+  
+  isAtPosition(position) {
+    return this.position.x === position.x && this.position.z === position.z;
+  }
+  
+  getPosition() {
+    return this.position;
+  }
+  
+  dispose() {
+    if (this.mesh) {
+      this.mesh.dispose();
     }
   }
 }
