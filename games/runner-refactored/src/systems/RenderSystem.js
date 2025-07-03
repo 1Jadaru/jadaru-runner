@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { DEBUG } from '../core/config.js';
 
 /**
  * Render system handling visual effects and rendering optimizations
@@ -27,7 +28,7 @@ export class RenderSystem {
   setupPostProcessing() {
     // Note: Post-processing requires additional Three.js modules
     // For now, we'll keep the basic renderer
-    console.log('Post-processing setup (placeholder for bloom effects)');
+    if (DEBUG) console.log('Post-processing setup (placeholder for bloom effects)');
   }
   
   /**
@@ -193,7 +194,7 @@ export class RenderSystem {
       }
     }
     
-    console.log('Reduced visual quality for performance');
+    if (DEBUG) console.log('Reduced visual quality for performance');
   }
   
   /**
@@ -208,7 +209,7 @@ export class RenderSystem {
     // Enable shadows
     renderer.shadowMap.enabled = true;
     
-    console.log('Restored visual quality');
+    if (DEBUG) console.log('Restored visual quality');
   }
   
   /**

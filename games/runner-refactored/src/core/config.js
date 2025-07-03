@@ -1,6 +1,9 @@
 /**
  * Game configuration and constants
  */
+// Toggle debug logging throughout the game. When false, debug
+// logs wrapped in `if (DEBUG)` will be suppressed.
+export const DEBUG = false;
 export const CONFIG = {
   // Scene settings
   SCENE: {
