@@ -140,6 +140,12 @@ export class Game {
     this.snake = new Snake(this.scene, this.grid);
     this.food = new Food(this.scene, this.grid);
     this.spawnFood();
+    
+    // Test power-up spawning
+    console.log('DEBUG: Testing power-up spawning at game start');
+    setTimeout(() => {
+      this.spawnPowerUp();
+    }, 2000); // Spawn a test power-up after 2 seconds
   }
 
   setupInput() {
@@ -297,13 +303,24 @@ export class Game {
   checkPowerUpConsumption() {
     const headPos = this.snake.getHeadPosition();
     if (!headPos) {
+      console.log('DEBUG: No head position available');
       return false;
     }
     
+    console.log('DEBUG: Checking power-up collisions. Snake head at:', headPos);
+    console.log('DEBUG: Active power-ups:', this.powerUps.length);
+    
     for (let i = this.powerUps.length - 1; i >= 0; i--) {
       const powerUp = this.powerUps[i];
-      if (powerUp.isAtPosition(headPos)) {
+      const powerUpPos = powerUp.getPosition();
+      const isColliding = powerUp.isAtPosition(headPos);
+      
+      console.log(`DEBUG: Power-up ${i} (${powerUp.type}) at:`, powerUpPos, 'Colliding:', isColliding);
+      
+      if (isColliding) {
+        console.log(`DEBUG: COLLISION DETECTED! Collecting ${powerUp.type} power-up`);
         this.powerUps.splice(i, 1);
+        console.log(`DEBUG: Power-up removed from array. Remaining power-ups:`, this.powerUps.length);
         return powerUp;
       }
     }
@@ -338,7 +355,9 @@ export class Game {
     this.checkLevelUp();
     
     // Randomly spawn power-up
-    if (Math.random() < 0.1) { // 10% chance
+    const shouldSpawn = Math.random() < 0.3; // 30% chance for testing
+    console.log('DEBUG: Food consumed. Should spawn power-up:', shouldSpawn);
+    if (shouldSpawn) {
       this.spawnPowerUp();
     }
     
@@ -347,29 +366,38 @@ export class Game {
   }
   
   handlePowerUpConsumption(powerUp) {
+    console.log(`DEBUG: Handling power-up consumption for type: ${powerUp.type}`);
     this.activatePowerUp(powerUp.type);
     this.playSound('powerup');
     
     // Create power-up effect
     this.createPowerUpEffect(powerUp.position);
+    
+    // Dispose of the power-up
+    powerUp.dispose();
   }
   
   activatePowerUp(type) {
+    console.log(`DEBUG: Activating power-up: ${type}`);
     this.powerUpActive = true;
     this.powerUpType = type;
     this.powerUpTimer = 5000; // 5 seconds
     
     switch (type) {
       case 'speed':
+        console.log('DEBUG: Activating speed power-up');
         this.moveInterval *= 0.5;
         break;
       case 'slow':
+        console.log('DEBUG: Activating slow power-up');
         this.moveInterval *= 2;
         break;
       case 'ghost':
+        console.log('DEBUG: Activating ghost power-up');
         this.snake.setGhostMode(true);
         break;
       case 'double':
+        console.log('DEBUG: Activating double points power-up');
         // Double points for a duration
         break;
     }
@@ -434,6 +462,7 @@ export class Game {
   }
   
   spawnPowerUp() {
+    console.log('DEBUG: spawnPowerUp() method called');
     const types = ['speed', 'slow', 'ghost', 'double'];
     const type = types[Math.floor(Math.random() * types.length)];
     
@@ -441,22 +470,39 @@ export class Game {
     const foodPosition = this.food.getPosition();
     const powerUpPositions = this.powerUps.map(p => p.getPosition());
     
+    console.log('DEBUG: Snake positions:', snakePositions);
+    console.log('DEBUG: Food position:', foodPosition);
+    console.log('DEBUG: Existing power-up positions:', powerUpPositions);
+    
     const availablePositions = [];
     for (let x = 0; x < this.grid.cols; x++) {
-      for (let z = 0; z < this.grid.rows; z++) {
-        const pos = { x, z };
-        if (!snakePositions.some(p => p.x === pos.x && p.z === pos.z) &&
-            !(foodPosition.x === pos.x && foodPosition.z === pos.z) &&
-            !powerUpPositions.some(p => p.x === pos.x && p.z === pos.z)) {
+      for (let y = 0; y < this.grid.rows; y++) {
+        const pos = { x, y };
+        const isSnakePosition = snakePositions.some(p => p.x === pos.x && p.y === pos.y);
+        const isFoodPosition = (foodPosition.x === pos.x && foodPosition.y === pos.y);
+        const isPowerUpPosition = powerUpPositions.some(p => p.x === pos.x && p.y === pos.y);
+        
+        if (!isSnakePosition && !isFoodPosition && !isPowerUpPosition) {
           availablePositions.push(pos);
         }
       }
     }
     
+    console.log('DEBUG: Available positions count:', availablePositions.length);
+    console.log('DEBUG: Grid dimensions:', this.grid.cols, 'x', this.grid.rows);
+    
     if (availablePositions.length > 0) {
       const position = availablePositions[Math.floor(Math.random() * availablePositions.length)];
-      const powerUp = new PowerUp(this.scene, this.grid, position, type);
-      this.powerUps.push(powerUp);
+      console.log(`DEBUG: Spawning ${type} power-up at position:`, position);
+      try {
+        const powerUp = new PowerUp(this.scene, this.grid, position, type);
+        this.powerUps.push(powerUp);
+        console.log(`DEBUG: Power-up added to array. Total power-ups:`, this.powerUps.length);
+      } catch (error) {
+        console.error('DEBUG: Error creating power-up:', error);
+      }
+    } else {
+      console.log('DEBUG: No available positions for power-up spawning');
     }
   }
   
@@ -583,6 +629,7 @@ export class Game {
     this.powerUpTimer = 0;
     
     // Clear power-ups
+    console.log('DEBUG: Clearing power-ups array in restartGame');
     this.powerUps.forEach(powerUp => powerUp.dispose());
     this.powerUps = [];
     
@@ -697,6 +744,7 @@ export class Game {
 
   dispose() {
     // Clean up power-ups
+    console.log('DEBUG: Clearing power-ups array in dispose');
     this.powerUps.forEach(powerUp => powerUp.dispose());
     this.powerUps = [];
     
@@ -715,13 +763,14 @@ export class Game {
 // PowerUp class for special items
 class PowerUp {
   constructor(scene, grid, position, type) {
+    console.log(`DEBUG: Creating PowerUp of type ${type} at position:`, position);
     this.scene = scene;
     this.grid = grid;
-    this.position = position;
+    this.position = position; // {x, y}
     this.type = type;
     this.mesh = null;
-    
     this.createMesh();
+    console.log(`DEBUG: PowerUp created successfully`);
   }
   
   createMesh() {
@@ -744,10 +793,12 @@ class PowerUp {
     material.specularColor = new BABYLON.Color3(1, 1, 1);
     
     this.mesh.material = material;
+    // Use gridToWorld for correct placement
+    const worldPos = this.grid.gridToWorld(this.position.x, this.position.y);
     this.mesh.position = new BABYLON.Vector3(
-      this.position.x * this.grid.cellSize,
+      worldPos.x,
       this.grid.cellSize * 0.5,
-      this.position.z * this.grid.cellSize
+      worldPos.z
     );
     
     // Add rotation animation
@@ -765,7 +816,10 @@ class PowerUp {
   }
   
   isAtPosition(position) {
-    return this.position.x === position.x && this.position.z === position.z;
+    // Compare x and y (not z)
+    const isColliding = this.position.x === position.x && this.position.y === position.y;
+    console.log(`DEBUG: PowerUp.isAtPosition - PowerUp at (${this.position.x}, ${this.position.y}), Snake at (${position.x}, ${position.y}), Colliding: ${isColliding}`);
+    return isColliding;
   }
   
   getPosition() {
@@ -773,8 +827,17 @@ class PowerUp {
   }
   
   dispose() {
+    console.log(`DEBUG: Disposing PowerUp of type ${this.type}`);
     if (this.mesh) {
+      // Stop any animations
+      this.scene.stopAnimation(this.mesh);
+      // Dispose of the material
+      if (this.mesh.material) {
+        this.mesh.material.dispose();
+      }
+      // Dispose of the mesh
       this.mesh.dispose();
+      this.mesh = null;
     }
   }
 }

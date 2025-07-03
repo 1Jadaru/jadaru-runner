@@ -411,7 +411,9 @@ export class Snake {
       console.error('Cannot get head position: body is empty');
       return null;
     }
-    return this.body[0];
+    const headPos = this.body[0];
+    console.log('DEBUG: Snake head position:', headPos);
+    return headPos;
   }
 
   /**
