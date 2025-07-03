@@ -141,11 +141,13 @@ export class Game {
     this.food = new Food(this.scene, this.grid);
     this.spawnFood();
     
-    // Test power-up spawning
-    console.log('DEBUG: Testing power-up spawning at game start');
-    setTimeout(() => {
-      this.spawnPowerUp();
-    }, 2000); // Spawn a test power-up after 2 seconds
+    // Optional debug: spawn a power-up shortly after starting
+    if (window.DEV_START_POWERUP) {
+      console.log('DEBUG: Spawning initial power-up');
+      setTimeout(() => {
+        this.spawnPowerUp();
+      }, 2000);
+    }
   }
 
   setupInput() {
