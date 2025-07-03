@@ -2,7 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">  <title>Snake Game - Babylon.js</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Snake Game - Babylon.js</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="stylesheet" href="styles/main.css">
   <link rel="stylesheet" href="/css/style.css">
@@ -21,21 +22,18 @@
        crossorigin="anonymous"></script>
   <script src="https://cdn.babylonjs.com/babylon.js"></script>
 </head>
-<body>  <header class="site-header">
+<body>
+  <header class="site-header">
     <div class="container">
       <div class="header-content">
         <div class="logo-section">
-          <h1 class="logo">🐍 Jadaru Snake</h1>
-          <span class="game-version">v2.0</span>
+          <h1 class="logo">🐍 Snake Game</h1>
+          <span class="game-version">v2.0 Enhanced</span>
         </div>
         <nav class="main-nav">
           <a href="/" class="nav-btn home-btn">
             <span class="nav-icon">🏠</span>
             <span class="nav-text">Home</span>
-          </a>
-          <a href="/games/runner/" class="nav-btn">
-            <span class="nav-icon">🏃</span>
-            <span class="nav-text">Runner</span>
           </a>
           <button id="fullscreen-btn" class="nav-btn action-btn">
             <span class="nav-icon">⛶</span>
@@ -45,140 +43,181 @@
       </div>
     </div>
   </header>
-  <div class="game-container">
-    <div class="game-area">      <div class="game-header">
-        <div class="game-title-section">
-          <h1 class="game-title">🐍 Snake Game</h1>
-          <p class="game-subtitle">Grow your snake and beat your high score!</p>
-        </div>
-        <div class="game-stats">
-          <div class="stat-card score-card">
-            <div class="stat-label">Score</div>
-            <div class="stat-value" id="score">0</div>
-          </div>
-          <div class="stat-card high-score-card">
-            <div class="stat-label">Best</div>
-            <div class="stat-value" id="high-score">0</div>
-          </div>
-          <div class="stat-card level-card">
-            <div class="stat-label">Level</div>
-            <div class="stat-value" id="level">1</div>
-          </div>
-          <div class="stat-card combo-card" id="combo" style="display: none;">
-            <div class="stat-label">Combo</div>
-            <div class="stat-value">1x</div>
-          </div>
-        </div>
-      </div>
-      
-      <div class="canvas-container">
-        <canvas id="game-canvas" width="600" height="600"></canvas>        <div class="game-overlay" id="game-overlay">
-          <div class="game-message" id="game-message">
-            <div class="message-icon">🎮</div>
-            <h2>Ready to Play?</h2>
-            <p>Use <kbd>Arrow Keys</kbd> or <kbd>WASD</kbd> to control your snake</p>
-            <div class="game-instructions">
-              <div class="instruction-item">
-                <kbd>SPACE</kbd> <span>Start/Restart Game</span>
-              </div>
-              <div class="instruction-item">
-                <kbd>P</kbd> <span>Pause/Resume</span>
-              </div>
-              <div class="instruction-item">
-                <kbd>ESC</kbd> <span>Menu</span>
-              </div>
+
+  <main class="game-main">
+    <div class="game-layout">
+      <!-- Left Sidebar - Stats and Controls -->
+      <aside class="game-sidebar">
+        <div class="stats-panel">
+          <h3 class="panel-title">📊 Game Stats</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-label">Score</div>
+              <div class="stat-value" id="score">0</div>
             </div>
-            <button class="start-game-btn" id="start-game-btn">
-              <span class="btn-icon">🚀</span>
-              <span>Start Game</span>
+            <div class="stat-item">
+              <div class="stat-label">Best</div>
+              <div class="stat-value" id="high-score">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-label">Level</div>
+              <div class="stat-value" id="level">1</div>
+            </div>
+            <div class="stat-item combo-item" id="combo" style="display: none;">
+              <div class="stat-label">Combo</div>
+              <div class="stat-value">1x</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="controls-panel">
+          <h3 class="panel-title">🎮 Controls</h3>
+          <div class="control-buttons">
+            <div class="control-row">
+              <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
+            </div>
+            <div class="control-row">
+              <kbd>W</kbd><kbd>S</kbd><kbd>A</kbd><kbd>D</kbd>
+            </div>
+            <div class="control-row">
+              <kbd>SPACE</kbd> <span>Start</span>
+            </div>
+            <div class="control-row">
+              <kbd>P</kbd> <span>Pause</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mode-panel">
+          <h3 class="panel-title">🎯 Game Mode</h3>
+          <div class="mode-buttons">
+            <button class="mode-btn active" data-mode="classic">
+              <span class="btn-icon">🐍</span>
+              <span class="btn-text">Classic</span>
+            </button>
+            <button class="mode-btn" data-mode="speed">
+              <span class="btn-icon">⚡</span>
+              <span class="btn-text">Speed</span>
+            </button>
+            <button class="mode-btn" data-mode="survival">
+              <span class="btn-icon">💀</span>
+              <span class="btn-text">Survival</span>
             </button>
           </div>
         </div>
-      </div>      <div class="controls">
-        <div class="control-section">
-          <h3 class="control-title">🎮 Game Controls</h3>
-          <div class="control-grid">
-            <div class="control-group">
-              <h4>Movement</h4>
-              <div class="control-keys">
-                <kbd>↑</kbd><kbd>↓</kbd><kbd>←</kbd><kbd>→</kbd>
-                <span class="control-or">or</span>
-                <kbd>W</kbd><kbd>S</kbd><kbd>A</kbd><kbd>D</kbd>
-              </div>
-            </div>
-            <div class="control-group">
-              <h4>Actions</h4>
-              <div class="control-actions">
-                <div class="control-item">
+
+        <div class="options-panel">
+          <h3 class="panel-title">⚙️ Options</h3>
+          <div class="option-buttons">
+            <button id="toggle-virtual-controls" class="option-btn">
+              <span class="btn-icon">📱</span>
+              <span class="btn-text">Virtual Controls</span>
+            </button>
+            <button id="toggle-sound" class="option-btn">
+              <span class="btn-icon">🔊</span>
+              <span class="btn-text">Sound On</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Center - Game Canvas -->
+      <section class="game-center">
+        <div class="canvas-wrapper">
+          <canvas id="game-canvas" width="600" height="600"></canvas>
+          <div class="game-overlay" id="game-overlay">
+            <div class="game-message" id="game-message">
+              <div class="message-icon">🎮</div>
+              <h2>Ready to Play?</h2>
+              <p>Use <kbd>Arrow Keys</kbd> or <kbd>WASD</kbd> to control your snake</p>
+              <div class="quick-instructions">
+                <div class="instruction-item">
                   <kbd>SPACE</kbd> <span>Start/Restart</span>
                 </div>
-                <div class="control-item">
+                <div class="instruction-item">
                   <kbd>P</kbd> <span>Pause/Resume</span>
                 </div>
-                <div class="control-item">
-                  <kbd>ESC</kbd> <span>Game Menu</span>
-                </div>
               </div>
-            </div>
-          </div>
-          <div class="control-options">
-            <div class="game-mode-selector">
-              <h4>Game Mode</h4>
-              <div class="mode-buttons">
-                <button class="mode-btn active" data-mode="classic">
-                  <span class="btn-icon">🐍</span>
-                  <span class="btn-text">Classic</span>
-                </button>
-                <button class="mode-btn" data-mode="speed">
-                  <span class="btn-icon">⚡</span>
-                  <span class="btn-text">Speed</span>
-                </button>
-                <button class="mode-btn" data-mode="survival">
-                  <span class="btn-icon">💀</span>
-                  <span class="btn-text">Survival</span>
-                </button>
-              </div>
-            </div>
-            <div class="control-toggles">
-              <button id="toggle-virtual-controls" class="toggle-controls-btn">
-                <span class="btn-icon">📱</span>
-                <span class="btn-text">Show Virtual Controls</span>
-              </button>
-              <button id="toggle-sound" class="toggle-sound-btn">
-                <span class="btn-icon">🔊</span>
-                <span class="btn-text">Sound On</span>
+              <button class="start-game-btn" id="start-game-btn">
+                <span class="btn-icon">🚀</span>
+                <span>Start Game</span>
               </button>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- Mobile Virtual Controls -->
-      <div class="mobile-controls" id="mobile-controls">
-        <div class="dpad-container">
-          <div class="dpad">
-            <button class="dpad-btn dpad-up" data-direction="up">▲</button>
-            <button class="dpad-btn dpad-left" data-direction="left">◀</button>
-            <button class="dpad-btn dpad-center" data-action="start">●</button>
-            <button class="dpad-btn dpad-right" data-direction="right">▶</button>
-            <button class="dpad-btn dpad-down" data-direction="down">▼</button>
+      <!-- Right Sidebar - Power-ups Info -->
+      <aside class="info-sidebar">
+        <div class="powerups-panel">
+          <h3 class="panel-title">🚀 Power-ups</h3>
+          <div class="powerup-list">
+            <div class="powerup-item">
+              <div class="powerup-icon red">⚡</div>
+              <div class="powerup-info">
+                <div class="powerup-name">Speed</div>
+                <div class="powerup-desc">Faster movement</div>
+              </div>
+            </div>
+            <div class="powerup-item">
+              <div class="powerup-icon blue">🐌</div>
+              <div class="powerup-info">
+                <div class="powerup-name">Slow</div>
+                <div class="powerup-desc">Slower movement</div>
+              </div>
+            </div>
+            <div class="powerup-item">
+              <div class="powerup-icon purple">👻</div>
+              <div class="powerup-info">
+                <div class="powerup-name">Ghost</div>
+                <div class="powerup-desc">Pass through walls</div>
+              </div>
+            </div>
+            <div class="powerup-item">
+              <div class="powerup-icon yellow">💎</div>
+              <div class="powerup-info">
+                <div class="powerup-name">Double</div>
+                <div class="powerup-desc">Double points</div>
+              </div>
+            </div>
           </div>
         </div>
-        <div class="action-buttons">
-          <button class="action-btn pause-btn" data-action="pause">⏸</button>
+
+        <div class="tips-panel">
+          <h3 class="panel-title">💡 Tips</h3>
+          <div class="tips-list">
+            <div class="tip-item">• Chain food for combos</div>
+            <div class="tip-item">• Use ghost mode strategically</div>
+            <div class="tip-item">• Plan your route ahead</div>
+            <div class="tip-item">• Try different game modes</div>
+          </div>
+        </div>
+
+        <!-- Ad Container -->
+        <div class="ad-panel">
+          <div class="ad-placeholder">
+            <p>Advertisement</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Mobile Virtual Controls -->
+    <div class="mobile-controls" id="mobile-controls">
+      <div class="dpad-container">
+        <div class="dpad">
+          <button class="dpad-btn dpad-up" data-direction="up">▲</button>
+          <button class="dpad-btn dpad-left" data-direction="left">◀</button>
+          <button class="dpad-btn dpad-center" data-action="start">●</button>
+          <button class="dpad-btn dpad-right" data-direction="right">▶</button>
+          <button class="dpad-btn dpad-down" data-direction="down">▼</button>
         </div>
       </div>
-    </div>
-    
-    <!-- Ad Container for AdSense -->
-    <div id="ad-container" class="ad-container">
-      <div class="ad-placeholder">
-        <p>Advertisement Space</p>
-        <p>300x600 Banner</p>
-        <!-- AdSense code will go here -->
+      <div class="action-buttons">
+        <button class="action-btn pause-btn" data-action="pause">⏸</button>
       </div>
     </div>
-  </div>
+  </main>
 
   <script type="module" src="src/main.js"></script>
 </body>
