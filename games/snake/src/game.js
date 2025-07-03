@@ -743,15 +743,16 @@ export class Game {
   }
 
   dispose() {
+    if (this.inputHandler) this.inputHandler.dispose();
+
     // Clean up power-ups
     console.log('DEBUG: Clearing power-ups array in dispose');
     this.powerUps.forEach(powerUp => powerUp.dispose());
     this.powerUps = [];
-    
+
     // Clean up game objects
     if (this.snake) this.snake.dispose();
     if (this.food) this.food.dispose();
-    if (this.inputHandler) this.inputHandler.dispose();
     
     // Clean up audio
     if (this.audioContext) {

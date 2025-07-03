@@ -9,13 +9,18 @@ export class InputHandler {
     this.lastDirection = { x: 1, y: 0 }; // Initialize with snake's starting direction
     this.directionQueue = [];
     this.callbacks = new Map();
-      this.init();
+    this.listeners = [];
+    this.init();
   }
 
   init() {
     // Keyboard event listeners
-    document.addEventListener('keydown', (event) => this.handleKeyDown(event));
-    document.addEventListener('keyup', (event) => this.handleKeyUp(event));
+    this.keyDownListener = (event) => this.handleKeyDown(event);
+    this.keyUpListener = (event) => this.handleKeyUp(event);
+    document.addEventListener('keydown', this.keyDownListener);
+    document.addEventListener('keyup', this.keyUpListener);
+    this.listeners.push({ target: document, type: 'keydown', handler: this.keyDownListener });
+    this.listeners.push({ target: document, type: 'keyup', handler: this.keyUpListener });
     
     // Touch event listeners for mobile
     this.initTouchControls();
@@ -103,13 +108,15 @@ export class InputHandler {
     let touchStartY = 0;
     const minSwipeDistance = 30;
 
-    document.addEventListener('touchstart', (event) => {
+    this.touchStartListener = (event) => {
       const touch = event.touches[0];
       touchStartX = touch.clientX;
       touchStartY = touch.clientY;
-    }, { passive: true });
+    };
+    document.addEventListener('touchstart', this.touchStartListener, { passive: true });
+    this.listeners.push({ target: document, type: 'touchstart', handler: this.touchStartListener, options: { passive: true } });
 
-    document.addEventListener('touchend', (event) => {
+    this.touchEndListener = (event) => {
       event.preventDefault();
       
       const touch = event.changedTouches[0];
@@ -141,27 +148,35 @@ export class InputHandler {
 
       if (direction) {
         this.queueDirection(direction);
-      }    });
+      }
+    };
+    document.addEventListener('touchend', this.touchEndListener);
+    this.listeners.push({ target: document, type: 'touchend', handler: this.touchEndListener });
   }
 
   initVirtualControls() {
     const virtualButtons = document.querySelectorAll('.dpad-btn, .action-btn');
-    
+
     virtualButtons.forEach((button) => {
-      // Prevent scrolling on touch
-      button.addEventListener('touchstart', (e) => {
+      const touchStartHandler = (e) => {
         e.preventDefault();
-      }, { passive: false });
-      
-      button.addEventListener('touchend', (e) => {
-        e.preventDefault();
-        this.handleVirtualButton(button);
-      }, { passive: false });
-        // Also handle click for testing on desktop
-      button.addEventListener('click', (e) => {
+      };
+      button.addEventListener('touchstart', touchStartHandler, { passive: false });
+      this.listeners.push({ target: button, type: 'touchstart', handler: touchStartHandler, options: { passive: false } });
+
+      const touchEndHandler = (e) => {
         e.preventDefault();
         this.handleVirtualButton(button);
-      });
+      };
+      button.addEventListener('touchend', touchEndHandler, { passive: false });
+      this.listeners.push({ target: button, type: 'touchend', handler: touchEndHandler, options: { passive: false } });
+
+      const clickHandler = (e) => {
+        e.preventDefault();
+        this.handleVirtualButton(button);
+      };
+      button.addEventListener('click', clickHandler);
+      this.listeners.push({ target: button, type: 'click', handler: clickHandler });
     });
   }
 
@@ -218,6 +233,19 @@ export class InputHandler {
    */
   isKeyPressed(keyCode) {
     return this.keys.has(keyCode);
+  }
+
+  getListenerCount() {
+    return this.listeners.length;
+  }
+
+  dispose() {
+    this.listeners.forEach(({ target, type, handler, options }) => {
+      target.removeEventListener(type, handler, options);
+    });
+    this.listeners = [];
+    this.keys.clear();
+    this.directionQueue = [];
   }
   reset() {
     this.directionQueue = [];
